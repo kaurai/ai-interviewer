@@ -1,0 +1,12 @@
+{
+  "name": "@ai-interviewer/api",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "dependencies": {
+    "@ai-interviewer/shared": "*",
+    "mammoth": "^1.13.0",
+    "pdf-parse": "^2.4.5",
+    "zod": "^4.1.0"
+  }
+}

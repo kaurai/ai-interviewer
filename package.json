@@ -1,0 +1,35 @@
+{
+  "name": "ai-interviewer",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "workspaces": [
+    "packages/*",
+    "apps/*"
+  ],
+  "engines": {
+    "node": ">=22"
+  },
+  "scripts": {
+    "validate:questions": "tsx scripts/validate-questions.ts",
+    "seed:validate": "npm run validate:questions",
+    "questions:show": "tsx scripts/show-question.ts",
+    "questions:search": "tsx scripts/search-questions.ts",
+    "dev:api": "tsx watch apps/api/src/index.ts",
+    "start:api": "node --import tsx apps/api/src/index.ts",
+    "doctor": "node --import tsx scripts/doctor.ts",
+    "interview": "node --import tsx apps/cli/src/index.ts",
+    "interview:demo": "node --import tsx apps/cli/src/index.ts --resume data/fixtures/synthetic-backend-resume.md --role backend --seniority mid --mode text --questions 3 --answers data/fixtures/demo-answers.json --no-save --yes",
+    "typecheck": "tsc -p tsconfig.json && tsc -p apps/web/tsconfig.json",
+    "test": "vitest run",
+    "test:questions": "vitest run packages/shared/test/questionValidation.test.ts apps/api/test/retriever.test.ts apps/api/test/questionRepository.test.ts",
+    "test:stt": "vitest run packages/shared/test/audio.test.ts apps/api/test/stt apps/web/test",
+    "test:pipeline": "vitest run apps/api/test/pipeline apps/cli/test"
+  },
+  "devDependencies": {
+    "@types/node": "^24.0.0",
+    "tsx": "^4.20.0",
+    "typescript": "^5.9.0",
+    "vitest": "^3.2.0"
+  }
+}

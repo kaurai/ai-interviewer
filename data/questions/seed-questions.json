@@ -1,0 +1,2470 @@
+[
+  {
+    "id": "backend_rest_resource_design_01",
+    "schemaVersion": 1,
+    "roles": ["backend"],
+    "seniorities": ["junior", "mid"],
+    "type": "technical",
+    "topic": "api-design",
+    "tags": ["rest", "http-status-codes", "error-handling", "resource-modeling"],
+    "difficulty": 2,
+    "competencyIds": ["backend.api-design"],
+    "question": "Suppose you're building an API for a library app where members borrow and return books. How would you design the endpoints for borrowing and returning, and how would you report an error such as a book that is already checked out?",
+    "intent": "Assess whether the candidate can model a small domain as HTTP resources and actions, choose sensible methods and status codes, and return errors clients can act on.",
+    "expectedSignals": [
+      "models loans or checkouts as a resource rather than only verbs on the book",
+      "chooses HTTP methods that match the semantics of creating and closing a loan",
+      "distinguishes client errors such as conflict or not found from server errors",
+      "returns a structured error body with a machine-readable code and a human message",
+      "mentions validating that the member and book exist before changing state"
+    ],
+    "redFlags": [
+      "uses a single endpoint with an action parameter for every operation without explaining why",
+      "returns success status codes for failed operations"
+    ],
+    "followupProbes": [
+      {
+        "id": "backend_rest_resource_design_01.conflict-status",
+        "trigger": "candidate does not say how the client learns that the book is unavailable",
+        "question": "What exactly would the client receive if the book is already checked out?"
+      },
+      {
+        "id": "backend_rest_resource_design_01.loan-history",
+        "trigger": "strong answer that models loans as their own resource",
+        "question": "How would your design change if librarians also need to see a member's full borrowing history?"
+      }
+    ],
+    "scoringAnchors": {
+      "1": "Describes endpoints vaguely or with methods and status codes that contradict their meaning; no clear error contract.",
+      "3": "Proposes a coherent set of endpoints with appropriate methods, a conflict-style error for an unavailable book, and a consistent error shape.",
+      "5": "Models loans as a first-class resource, justifies method and status choices, defines an actionable error contract, and anticipates related needs such as history or concurrent checkouts."
+    },
+    "source": { "kind": "original", "title": "AI Interviewer workshop seed bank" }
+  },
+  {
+    "id": "backend_api_versioning_01",
+    "schemaVersion": 1,
+    "roles": ["backend"],
+    "seniorities": ["mid", "senior"],
+    "type": "technical",
+    "topic": "api-design",
+    "tags": ["versioning", "backward-compatibility", "deprecation", "public-api"],
+    "difficulty": 3,
+    "competencyIds": ["backend.api-design", "shared.tradeoff-reasoning"],
+    "question": "You own a public API used by hundreds of external clients, and you need to change the shape of a widely used response field. How would you roll out that change without breaking existing integrations?",
+    "intent": "Assess the candidate's approach to evolving an API contract safely, including compatibility strategy, communication, and measuring migration progress.",
+    "expectedSignals": [
+      "prefers additive or backward-compatible changes before a breaking version",
+      "describes a versioning mechanism and its tradeoffs",
+      "plans a deprecation period with communication to client developers",
+      "uses usage data to know which clients still depend on the old shape",
+      "defines when the old behavior can actually be removed"
+    ],
+    "redFlags": [
+      "changes the field in place and expects clients to adapt",
+      "proposes maintaining old versions forever without acknowledging the cost"
+    ],
+    "followupProbes": [
+      {
+        "id": "backend_api_versioning_01.migration-tracking",
+        "trigger": "candidate does not mention how to know when clients have migrated",
+        "question": "How would you know when it is safe to turn off the old behavior?"
+      },
+      {
+        "id": "backend_api_versioning_01.stuck-client",
+        "trigger": "strong answer with a clear deprecation plan",
+        "question": "What would you do about an important client that still has not migrated when the deadline arrives?"
+      }
+    ],
+    "scoringAnchors": {
+      "1": "Proposes an in-place breaking change or offers no strategy for existing clients.",
+      "3": "Describes a compatible rollout such as a new field or version, with a deprecation notice and timeline.",
+      "5": "Compares compatibility strategies, ties removal to measured usage, plans communication and support for laggards, and weighs the long-term cost of parallel versions."
+    },
+    "source": { "kind": "original", "title": "AI Interviewer workshop seed bank" }
+  },
+  {
+    "id": "backend_idempotent_payments_01",
+    "schemaVersion": 1,
+    "roles": ["backend"],
+    "seniorities": ["mid", "senior"],
+    "type": "technical",
+    "topic": "api-design",
+    "tags": ["idempotency", "retries", "payments", "network-failures"],
+    "difficulty": 4,
+    "competencyIds": ["backend.api-design", "backend.reliability"],
+    "question": "A mobile client calls your payment endpoint over a flaky network and sometimes retries after a timeout. How would you design the endpoint so a retry never charges the customer twice?",
+    "intent": "Assess understanding of idempotent request handling under retries and partial failure, including storage of request outcomes and concurrent duplicates.",
+    "expectedSignals": [
+      "introduces a client-supplied idempotency key or equivalent request identifier",
+      "stores the outcome of the first request and returns it for retries",
+      "handles two identical requests arriving concurrently, not just sequentially",
+      "considers the case where the downstream payment provider succeeded but the response was lost",
+      "defines how long keys are retained and what happens if the same key arrives with a different payload"
+    ],
+    "redFlags": [
+      "relies only on the client not retrying",
+      "deduplicates by amount and customer alone without considering legitimate repeat purchases"
+    ],
+    "followupProbes": [
+      {
+        "id": "backend_idempotent_payments_01.concurrent-duplicate",
+        "trigger": "candidate only considers retries that arrive after the first request finished",
+        "question": "What happens if the original request and the retry reach two different servers at the same moment?"
+      },
+      {
+        "id": "backend_idempotent_payments_01.lost-provider-response",
+        "trigger": "candidate does not address failures between your service and the payment provider",
+        "question": "Suppose the charge succeeded at the payment provider but your service crashed before recording it. How do you recover?"
+      }
+    ],
+    "scoringAnchors": {
+      "1": "Offers no mechanism beyond hoping retries do not happen, or a deduplication rule that blocks legitimate payments.",
+      "3": "Uses an idempotency key with a stored result and returns the original outcome on retry.",
+      "5": "Covers concurrent duplicates with an atomic claim on the key, reconciles with the provider after crashes, defines key scope and expiry, and rejects key reuse with a different payload."
+    },
+    "source": { "kind": "original", "title": "AI Interviewer workshop seed bank" }
+  },
+  {
+    "id": "backend_rate_limiter_01",
+    "schemaVersion": 1,
+    "roles": ["backend"],
+    "seniorities": ["mid", "senior"],
+    "type": "system-design",
+    "topic": "system-design",
+    "tags": ["rate-limiting", "distributed-counters", "atomicity", "fail-open"],
+    "difficulty": 3,
+    "competencyIds": ["backend.concurrency", "shared.tradeoff-reasoning"],
+    "question": "How would you design a rate limiter for an API that runs on several application servers, so that each customer gets at most a fixed number of requests per minute?",
+    "intent": "Assess whether the candidate can choose a limiting algorithm, keep shared counters correct across servers, and reason about behavior when the shared store fails.",
+    "expectedSignals": [
+      "chooses a limiting algorithm such as fixed window, sliding window, or token bucket and explains its tradeoff",
+      "uses a shared store or coordination so limits hold across servers",
+      "identifies the race condition when servers increment the same counter and proposes an atomic operation",
+      "decides whether to fail open or fail closed when the shared store is unavailable",
+      "describes what the client receives when limited, such as a retry-after signal"
+    ],
+    "redFlags": [
+      "keeps per-server in-memory counters without acknowledging the limit becomes per server",
+      "reads and then writes the counter in separate steps without noticing the race"
+    ],
+    "followupProbes": [
+      {
+        "id": "backend_rate_limiter_01.atomicity",
+        "trigger": "candidate mentions a shared counter but not how concurrent increments stay correct",
+        "question": "How would you prevent race conditions when two servers increment the same customer's counter at once?"
+      },
+      {
+        "id": "backend_rate_limiter_01.store-outage",
+        "trigger": "candidate does not discuss failure of the shared store",
+        "question": "What should the API do if the store holding the counters becomes unreachable?"
+      },
+      {
+        "id": "backend_rate_limiter_01.burst-tradeoff",
+        "trigger": "strong answer that already covers atomicity and failure handling",
+        "question": "How would your choice of algorithm change if customers legitimately send short bursts of traffic?"
+      }
+    ],
+    "scoringAnchors": {
+      "1": "Proposes per-server counters or a non-atomic read-then-write without recognizing either problem.",
+      "3": "Chooses a reasonable algorithm with a shared store, uses an atomic increment or equivalent, and tells limited clients when to retry.",
+      "5": "Compares algorithms against burst behavior, guarantees atomic updates, makes a justified fail-open or fail-closed decision, and considers hot keys or store latency."
+    },
+    "source": { "kind": "original", "title": "AI Interviewer workshop seed bank" }
+  },
+  {
+    "id": "backend_order_schema_01",
+    "schemaVersion": 1,
+    "roles": ["backend"],
+    "seniorities": ["junior", "mid"],
+    "type": "technical",
+    "topic": "data-modeling",
+    "tags": ["relational-schema", "foreign-keys", "constraints", "normalization"],
+    "difficulty": 2,
+    "competencyIds": ["backend.data-modeling"],
+    "question": "Walk me through how you would model customers, orders, and order line items in a relational database. Which tables, keys, and constraints would you create?",
+    "intent": "Assess basic relational modeling: entities, relationships, keys, and constraints that protect data integrity.",
+    "expectedSignals": [
+      "separates customers, orders, and line items into distinct tables with one-to-many relationships",
+      "uses primary keys and foreign keys to link records",
+      "adds constraints such as non-null fields or positive quantities",
+      "stores the price on the line item at purchase time rather than only referencing the current product price",
+      "mentions an index that supports a common query such as orders by customer"
+    ],
+    "redFlags": [
+      "stores line items as an unstructured list inside the order without acknowledging the tradeoff"
+    ],
+    "followupProbes": [
+      {
+        "id": "backend_order_schema_01.price-history",
+        "trigger": "candidate links line items only to the current product price",
+        "question": "What happens to old orders if a product's price changes next week?"
+      },
+      {
+        "id": "backend_order_schema_01.query-support",
+        "trigger": "candidate does not mention indexes or query patterns",
+        "question": "Which query would you expect to run most often, and how would your schema support it?"
+      }
+    ],
+    "scoringAnchors": {
+      "1": "Cannot describe the relationships between entities or proposes a structure that loses or duplicates data.",
+      "3": "Defines three related tables with primary and foreign keys and at least one integrity constraint.",
+      "5": "Produces a clean schema with justified constraints, preserves purchase-time prices, and connects indexes to expected queries."
+    },
+    "source": { "kind": "original", "title": "AI Interviewer workshop seed bank" }
+  },
+  {
+    "id": "backend_inventory_oversell_01",
+    "schemaVersion": 1,
+    "roles": ["backend"],
+    "seniorities": ["mid", "senior"],
+    "type": "technical",
+    "topic": "concurrency",
+    "tags": ["race-conditions", "transactions", "locking", "inventory"],
+    "difficulty": 3,
+    "competencyIds": ["backend.concurrency", "backend.data-modeling"],
+    "question": "Two customers try to buy the last item in stock at the same moment. How would you make sure your service never sells more units than you actually have?",
+    "intent": "Assess recognition of a check-then-act race and knowledge of database-level techniques to make the reservation atomic.",
+    "expectedSignals": [
+      "identifies that checking stock and then decrementing it in separate steps is a race",
+      "proposes an atomic conditional update, row lock, or optimistic version check",
+      "explains what the losing customer experiences",
+      "considers reservations that expire if checkout is abandoned",
+      "notes the throughput cost of heavy locking on popular items"
+    ],
+    "redFlags": [
+      "relies on application-level checks without any atomic guarantee"
+    ],
+    "followupProbes": [
+      {
+        "id": "backend_inventory_oversell_01.abandoned-cart",
+        "trigger": "candidate reserves stock but never releases it",
+        "question": "What happens to reserved stock if the customer never completes payment?"
+      },
+      {
+        "id": "backend_inventory_oversell_01.hot-item",
+        "trigger": "strong answer using locking or conditional updates",
+        "question": "How would your approach hold up during a flash sale where thousands of people buy the same item?"
+      }
+    ],
+    "scoringAnchors": {
+      "1": "Does not recognize the race or proposes a check followed by a separate update.",
+      "3": "Uses an atomic conditional decrement, transaction with lock, or version check, and handles the failed buyer.",
+      "5": "Compares pessimistic and optimistic approaches, handles reservation expiry, and reasons about contention on hot items."
+    },
+    "source": { "kind": "original", "title": "AI Interviewer workshop seed bank" }
+  },
+  {
+    "id": "backend_duplicate_job_processing_01",
+    "schemaVersion": 1,
+    "roles": ["backend"],
+    "seniorities": ["mid", "senior"],
+    "type": "situational",
+    "topic": "concurrency",
+    "tags": ["message-queues", "at-least-once-delivery", "deduplication", "background-jobs"],
+    "difficulty": 4,
+    "competencyIds": ["backend.concurrency", "backend.reliability"],
+    "question": "Your background workers pull jobs from a queue, and occasionally the same job runs twice, so customers receive duplicate emails. How would you investigate the cause and make the processing safe?",
+    "intent": "Assess understanding of at-least-once delivery, visibility timeouts, and designing side effects to tolerate duplicate execution.",
+    "expectedSignals": [
+      "explains that many queues deliver at least once, so duplicates are expected rather than exceptional",
+      "investigates causes such as jobs exceeding a visibility timeout or acknowledgments sent after failures",
+      "makes the side effect idempotent with a deduplication record keyed by job or message",
+      "orders the steps so a crash does not lose or repeat the side effect silently",
+      "uses logs or metrics to confirm the fix"
+    ],
+    "redFlags": [
+      "assumes the queue guarantees exactly-once delivery without checking"
+    ],
+    "followupProbes": [
+      {
+        "id": "backend_duplicate_job_processing_01.crash-window",
+        "trigger": "candidate adds deduplication but does not discuss crashes between sending and recording",
+        "question": "If a worker crashes right after sending the email but before recording it, what happens on the next attempt?"
+      },
+      {
+        "id": "backend_duplicate_job_processing_01.root-cause",
+        "trigger": "candidate jumps to a fix without investigating why duplicates occur",
+        "question": "Before changing code, what evidence would you look at to understand why jobs run twice?"
+      }
+    ],
+    "scoringAnchors": {
+      "1": "Treats duplicates as a rare bug to retry away, with no idempotency or investigation plan.",
+      "3": "Identifies at-least-once delivery or timeouts as a cause and adds a deduplication check before sending.",
+      "5": "Investigates with evidence, designs idempotent side effects with a clear crash-window analysis, and tunes timeouts or acknowledgment order with verification."
+    },
+    "source": { "kind": "original", "title": "AI Interviewer workshop seed bank" }
+  },
+  {
+    "id": "backend_online_table_migration_01",
+    "schemaVersion": 1,
+    "roles": ["backend"],
+    "seniorities": ["senior"],
+    "type": "technical",
+    "topic": "data-modeling",
+    "tags": ["schema-migration", "zero-downtime", "dual-writes", "backfill"],
+    "difficulty": 4,
+    "competencyIds": ["backend.data-modeling", "backend.reliability"],
+    "question": "You need to split a large, heavily used users table so profile data lives separately from login data, without taking the service offline. How would you plan and carry out that migration?",
+    "intent": "Assess the ability to sequence a live schema change safely with compatibility phases, backfill, verification, and rollback.",
+    "expectedSignals": [
+      "breaks the change into phases such as expand, migrate, and contract",
+      "keeps old and new structures consistent during transition through dual writes or change capture",
+      "backfills existing rows in batches to limit load and locking",
+      "verifies data consistency before switching reads",
+      "keeps a rollback path until the old structure is removed"
+    ],
+    "redFlags": [
+      "proposes a single migration script during a maintenance window despite the no-downtime constraint"
+    ],
+    "followupProbes": [
+      {
+        "id": "backend_online_table_migration_01.verification",
+        "trigger": "candidate does not explain how to confirm the new table is correct",
+        "question": "How would you convince yourself the new table matches the old one before switching reads?"
+      },
+      {
+        "id": "backend_online_table_migration_01.rollback",
+        "trigger": "strong phased plan",
+        "question": "At which point in your plan does rolling back become hard, and how would you prepare for that?"
+      }
+    ],
+    "scoringAnchors": {
+      "1": "Proposes a one-step migration that would lock the table or cause downtime.",
+      "3": "Describes a phased approach with a backfill and a cutover of reads and writes.",
+      "5": "Sequences expand-migrate-contract with dual writes, throttled backfill, consistency checks, staged cutover, and an explicit rollback boundary."
+    },
+    "source": { "kind": "original", "title": "AI Interviewer workshop seed bank" }
+  },
+  {
+    "id": "backend_cache_fundamentals_01",
+    "schemaVersion": 1,
+    "roles": ["backend"],
+    "seniorities": ["junior", "mid"],
+    "type": "technical",
+    "topic": "caching",
+    "tags": ["cache-basics", "read-heavy-workloads", "staleness", "ttl"],
+    "difficulty": 2,
+    "competencyIds": ["backend.caching"],
+    "question": "When would you add a cache in front of a database for a web application? Give an example of data you would cache and an example of data you would not.",
+    "intent": "Assess a working understanding of why caches help, what makes data a good candidate, and the cost of serving stale data.",
+    "expectedSignals": [
+      "explains that caches reduce latency or load for frequently read data",
+      "chooses cacheable data that is read often and tolerates brief staleness",
+      "chooses non-cacheable data where staleness or privacy would cause harm",
+      "mentions an expiry or invalidation strategy"
+    ],
+    "redFlags": [
+      "recommends caching everything by default without discussing staleness"
+    ],
+    "followupProbes": [
+      {
+        "id": "backend_cache_fundamentals_01.expiry",
+        "trigger": "candidate does not say how cached data gets refreshed",
+        "question": "How would cached data get updated when the underlying record changes?"
+      },
+      {
+        "id": "backend_cache_fundamentals_01.measure-benefit",
+        "trigger": "strong answer with clear examples",
+        "question": "How would you check whether the cache is actually helping after you add it?"
+      }
+    ],
+    "scoringAnchors": {
+      "1": "Cannot explain the purpose of a cache or gives examples where caching would clearly cause harm.",
+      "3": "Gives a sensible cache and no-cache example and mentions expiry or staleness.",
+      "5": "Ties cache decisions to read patterns and tolerance for staleness, chooses an invalidation approach, and describes how to measure hit rate or latency improvement."
+    },
+    "source": { "kind": "original", "title": "AI Interviewer workshop seed bank" }
+  },
+  {
+    "id": "backend_stale_price_cache_01",
+    "schemaVersion": 1,
+    "roles": ["backend"],
+    "seniorities": ["mid", "senior"],
+    "type": "situational",
+    "topic": "caching",
+    "tags": ["cache-invalidation", "consistency", "ttl", "event-driven-updates"],
+    "difficulty": 3,
+    "competencyIds": ["backend.caching", "shared.tradeoff-reasoning"],
+    "question": "Your product pages are cached for ten minutes, but sellers complain that price changes take too long to appear. How would you change the caching approach?",
+    "intent": "Assess reasoning about invalidation strategies and the tradeoff between freshness, load, and complexity.",
+    "expectedSignals": [
+      "considers explicit invalidation or updating the cache when a price changes",
+      "discusses the tradeoff of simply shortening the expiry time",
+      "separates fast-changing fields like price from slower-changing page content",
+      "addresses race conditions where an old value is written back after invalidation",
+      "protects the database from a burst of misses after invalidation"
+    ],
+    "redFlags": [
+      "removes caching entirely without considering load"
+    ],
+    "followupProbes": [
+      {
+        "id": "backend_stale_price_cache_01.write-race",
+        "trigger": "candidate proposes invalidation on update without discussing ordering",
+        "question": "Could a slow request write the old price back into the cache after you invalidate it? How would you handle that?"
+      },
+      {
+        "id": "backend_stale_price_cache_01.stampede",
+        "trigger": "candidate does not consider load after many entries expire",
+        "question": "What happens to the database if a popular product's cache entry is cleared during peak traffic?"
+      }
+    ],
+    "scoringAnchors": {
+      "1": "Only proposes disabling the cache or does not address staleness.",
+      "3": "Proposes invalidation or write-through on price change and acknowledges the load tradeoff of a shorter expiry.",
+      "5": "Separates data by volatility, handles invalidation races and cache stampedes, and explains how freshness would be measured."
+    },
+    "source": { "kind": "original", "title": "AI Interviewer workshop seed bank" }
+  },
+  {
+    "id": "backend_slow_order_history_01",
+    "schemaVersion": 1,
+    "roles": ["backend"],
+    "seniorities": ["junior", "mid"],
+    "type": "situational",
+    "topic": "performance",
+    "tags": ["query-performance", "indexes", "pagination", "profiling"],
+    "difficulty": 2,
+    "competencyIds": ["backend.data-modeling", "shared.problem-solving"],
+    "question": "An endpoint that lists a user's recent orders has become slow as the data grew. How would you figure out why, and what fixes might you try?",
+    "intent": "Assess a measured debugging approach to performance and familiarity with common query-level fixes.",
+    "expectedSignals": [
+      "measures before fixing, for example by timing the request or inspecting the query plan",
+      "checks whether a suitable index exists for the filter and sort",
+      "considers pagination or limiting returned rows",
+      "looks for repeated queries per order such as an N plus one pattern",
+      "confirms the fix by comparing measurements"
+    ],
+    "redFlags": [
+      "jumps to adding servers or caching without identifying the bottleneck"
+    ],
+    "followupProbes": [
+      {
+        "id": "backend_slow_order_history_01.measurement",
+        "trigger": "candidate proposes fixes without saying how to find the bottleneck",
+        "question": "What would you look at first to find out where the time is going?"
+      },
+      {
+        "id": "backend_slow_order_history_01.index-cost",
+        "trigger": "candidate proposes adding an index",
+        "question": "Is there any downside to adding that index?"
+      }
+    ],
+    "scoringAnchors": {
+      "1": "Guesses at a fix without any diagnostic step.",
+      "3": "Measures the slow part, identifies a likely cause such as a missing index or unbounded result set, and proposes a matching fix.",
+      "5": "Uses a systematic diagnosis, distinguishes several plausible causes, chooses fixes with their costs in mind, and verifies the improvement."
+    },
+    "source": { "kind": "original", "title": "AI Interviewer workshop seed bank" }
+  },
+  {
+    "id": "backend_slow_dependency_timeout_01",
+    "schemaVersion": 1,
+    "roles": ["backend"],
+    "seniorities": ["junior", "mid"],
+    "type": "technical",
+    "topic": "reliability",
+    "tags": ["timeouts", "retries", "third-party-apis", "graceful-degradation"],
+    "difficulty": 2,
+    "competencyIds": ["backend.reliability"],
+    "question": "Your service calls a third-party shipping API that sometimes takes thirty seconds to respond. What problems can that cause for your service, and how would you protect against them?",
+    "intent": "Assess awareness of how slow dependencies consume resources and basic protective patterns such as timeouts, bounded retries, and fallbacks.",
+    "expectedSignals": [
+      "explains that slow calls tie up threads, connections, or user requests",
+      "sets an explicit timeout shorter than the user-facing budget",
+      "uses limited retries with backoff only where safe",
+      "offers a degraded experience such as a cached estimate or asynchronous update",
+      "mentions monitoring the dependency's latency or error rate"
+    ],
+    "redFlags": [
+      "retries immediately and indefinitely"
+    ],
+    "followupProbes": [
+      {
+        "id": "backend_slow_dependency_timeout_01.retry-safety",
+        "trigger": "candidate proposes retries without conditions",
+        "question": "Are there cases where retrying the shipping call could make things worse?"
+      },
+      {
+        "id": "backend_slow_dependency_timeout_01.user-experience",
+        "trigger": "candidate focuses only on the server side",
+        "question": "What would the user see while the shipping API is slow?"
+      }
+    ],
+    "scoringAnchors": {
+      "1": "Does not identify the risk of waiting on slow calls or proposes unbounded retries.",
+      "3": "Identifies resource exhaustion, sets a timeout, and proposes a reasonable fallback or retry policy.",
+      "5": "Connects timeouts to user budgets, limits retries safely, isolates the dependency, provides graceful degradation, and monitors it."
+    },
+    "source": { "kind": "original", "title": "AI Interviewer workshop seed bank" }
+  },
+  {
+    "id": "backend_contain_cascading_failure_01",
+    "schemaVersion": 1,
+    "roles": ["backend"],
+    "seniorities": ["senior"],
+    "type": "system-design",
+    "topic": "reliability",
+    "tags": ["cascading-failures", "bulkheads", "load-shedding", "circuit-breakers"],
+    "difficulty": 5,
+    "competencyIds": ["backend.reliability", "shared.tradeoff-reasoning"],
+    "question": "During a traffic spike, one slow database replica causes your whole platform to start timing out, service by service. How would you design the system so a failure like that stays contained?",
+    "intent": "Assess the ability to reason about failure propagation across services and apply isolation, backpressure, and degradation with awareness of their costs.",
+    "expectedSignals": [
+      "explains how slow responses propagate through queued requests and exhausted pools",
+      "isolates resources with bulkheads or separate pools per dependency",
+      "uses circuit breakers or health-based routing to stop sending traffic to the bad replica",
+      "sheds or prioritizes load so critical paths survive",
+      "plans verification through load tests or game days and notes the risks of the safeguards themselves"
+    ],
+    "redFlags": [
+      "proposes only adding capacity without addressing propagation"
+    ],
+    "followupProbes": [
+      {
+        "id": "backend_contain_cascading_failure_01.retry-storm",
+        "trigger": "candidate does not consider client retries during the incident",
+        "question": "How do retries from upstream services affect this failure, and what would you do about them?"
+      },
+      {
+        "id": "backend_contain_cascading_failure_01.safeguard-risk",
+        "trigger": "strong answer that introduces circuit breakers or load shedding",
+        "question": "How could those safeguards themselves cause an outage, and how would you test them?"
+      }
+    ],
+    "scoringAnchors": {
+      "1": "Cannot explain how one slow component affects others or relies only on scaling up.",
+      "3": "Explains propagation and applies at least two containment techniques such as timeouts with circuit breakers and separate pools.",
+      "5": "Builds a layered containment design, addresses retry amplification, prioritizes critical traffic, and plans how to validate safeguards without creating new failure modes."
+    },
+    "source": { "kind": "original", "title": "AI Interviewer workshop seed bank" }
+  },
+  {
+    "id": "backend_post_deploy_incident_01",
+    "schemaVersion": 1,
+    "roles": ["backend"],
+    "seniorities": ["mid", "senior"],
+    "type": "situational",
+    "topic": "reliability",
+    "tags": ["incident-response", "rollback", "deploys", "mitigation"],
+    "difficulty": 3,
+    "competencyIds": ["backend.reliability", "backend.observability"],
+    "question": "Error rates on your checkout service jump right after a deploy, in the middle of a big sale. Walk me through what you do in the first thirty minutes.",
+    "intent": "Assess incident judgment: prioritizing mitigation over diagnosis, using signals to confirm impact, and communicating during the response.",
+    "expectedSignals": [
+      "prioritizes mitigation such as rolling back or disabling the change before deep debugging",
+      "uses dashboards or logs to confirm impact and correlate it with the deploy",
+      "communicates status to the team and affected stakeholders",
+      "verifies that the mitigation actually restored service",
+      "preserves evidence for a later review"
+    ],
+    "redFlags": [
+      "spends the first thirty minutes debugging code while customers are failing"
+    ],
+    "followupProbes": [
+      {
+        "id": "backend_post_deploy_incident_01.rollback-blocked",
+        "trigger": "candidate relies entirely on rollback",
+        "question": "Suppose the deploy included a database change that makes rollback unsafe. What then?"
+      },
+      {
+        "id": "backend_post_deploy_incident_01.after-action",
+        "trigger": "candidate mitigates but does not mention follow-up",
+        "question": "Once things are stable, what would you do to reduce the chance of this happening again?"
+      }
+    ],
+    "scoringAnchors": {
+      "1": "Has no clear priority or focuses on finding blame or debugging before mitigation.",
+      "3": "Confirms impact, mitigates quickly through rollback or a flag, and verifies recovery.",
+      "5": "Runs a structured response with clear roles and communication, adapts when rollback is unsafe, verifies recovery with metrics, and sets up a blameless review."
+    },
+    "source": { "kind": "original", "title": "AI Interviewer workshop seed bank" }
+  },
+  {
+    "id": "backend_logging_choices_01",
+    "schemaVersion": 1,
+    "roles": ["backend"],
+    "seniorities": ["junior"],
+    "type": "technical",
+    "topic": "observability",
+    "tags": ["logging", "sensitive-data", "debugging", "structured-logs"],
+    "difficulty": 1,
+    "competencyIds": ["backend.observability", "backend.security"],
+    "question": "When you write backend code, what do you choose to log, and what do you avoid logging? Give an example from something you've built or studied.",
+    "intent": "Assess basic logging judgment: capturing useful context for debugging while avoiding secrets and personal data.",
+    "expectedSignals": [
+      "logs events that help reconstruct what happened, such as errors and important state changes",
+      "includes context such as a request identifier",
+      "avoids logging passwords, tokens, or other sensitive personal data",
+      "mentions log levels or keeping volume manageable"
+    ],
+    "redFlags": [
+      "logs full request bodies including credentials without concern"
+    ],
+    "followupProbes": [
+      {
+        "id": "backend_logging_choices_01.trace-request",
+        "trigger": "candidate does not mention correlating log lines",
+        "question": "If a user reports one failed request, how would you find its log lines among thousands of others?"
+      },
+      {
+        "id": "backend_logging_choices_01.sensitive-data",
+        "trigger": "candidate does not mention what to avoid logging",
+        "question": "Is there any information you would make sure never ends up in your logs?"
+      }
+    ],
+    "scoringAnchors": {
+      "1": "Cannot name useful things to log or would log secrets without concern.",
+      "3": "Names useful events and context and identifies sensitive data to exclude.",
+      "5": "Gives a concrete example with structured context and correlation, deliberate levels, and clear handling of sensitive fields."
+    },
+    "source": { "kind": "original", "title": "AI Interviewer workshop seed bank" }
+  },
+  {
+    "id": "backend_alerting_strategy_01",
+    "schemaVersion": 1,
+    "roles": ["backend"],
+    "seniorities": ["mid", "senior"],
+    "type": "technical",
+    "topic": "observability",
+    "tags": ["alerting", "service-level-objectives", "on-call", "monitoring"],
+    "difficulty": 4,
+    "competencyIds": ["backend.observability", "backend.reliability"],
+    "question": "How would you decide what to monitor and alert on for a new customer-facing API, so the on-call engineer gets paged for real problems but not for noise?",
+    "intent": "Assess the ability to tie monitoring to user impact, design actionable alerts, and iterate on alert quality.",
+    "expectedSignals": [
+      "starts from user-facing signals such as error rate, latency, and availability",
+      "defines objectives or thresholds that reflect acceptable user impact",
+      "distinguishes paging alerts from tickets or dashboards",
+      "makes each alert actionable with a runbook or clear next step",
+      "reviews alert history to remove noisy or ignored alerts"
+    ],
+    "redFlags": [
+      "alerts on every resource metric such as CPU without linking to user impact"
+    ],
+    "followupProbes": [
+      {
+        "id": "backend_alerting_strategy_01.threshold-choice",
+        "trigger": "candidate names metrics but not how thresholds are chosen",
+        "question": "How would you choose the threshold that wakes someone up at night?"
+      },
+      {
+        "id": "backend_alerting_strategy_01.noise-review",
+        "trigger": "strong answer focused on user impact",
+        "question": "Six months later, how would you tell whether your alerts are still working well?"
+      }
+    ],
+    "scoringAnchors": {
+      "1": "Lists metrics without connecting them to user impact or proposes paging on everything.",
+      "3": "Alerts on user-facing error rate and latency with reasonable thresholds and separates urgent from non-urgent signals.",
+      "5": "Uses objectives or error budgets, designs actionable alerts with runbooks, and describes an ongoing process to measure and reduce alert noise."
+    },
+    "source": { "kind": "original", "title": "AI Interviewer workshop seed bank" }
+  },
+  {
+    "id": "backend_login_session_handling_01",
+    "schemaVersion": 1,
+    "roles": ["backend"],
+    "seniorities": ["junior", "mid"],
+    "type": "technical",
+    "topic": "security",
+    "tags": ["authentication", "sessions", "tokens", "password-storage"],
+    "difficulty": 2,
+    "competencyIds": ["backend.security"],
+    "question": "Explain how you would handle user login for a web application's API. On later requests, how does the server know who the user is, and what risks do you watch for?",
+    "intent": "Assess foundational authentication knowledge: credential storage, session or token mechanics, and common threats.",
+    "expectedSignals": [
+      "stores passwords with a slow, salted hashing algorithm rather than plaintext or fast hashes",
+      "explains a session identifier or signed token sent on later requests",
+      "addresses expiry and revocation of sessions or tokens",
+      "mentions transport security and protecting tokens from theft",
+      "considers brute-force protection such as rate limiting login attempts"
+    ],
+    "redFlags": [
+      "stores passwords in plaintext or with reversible encryption"
+    ],
+    "followupProbes": [
+      {
+        "id": "backend_login_session_handling_01.revocation",
+        "trigger": "candidate uses tokens without discussing logout or revocation",
+        "question": "If a user's token is stolen, how would you stop it from being used?"
+      },
+      {
+        "id": "backend_login_session_handling_01.password-storage",
+        "trigger": "candidate does not mention how credentials are stored",
+        "question": "How would you store the passwords themselves?"
+      }
+    ],
+    "scoringAnchors": {
+      "1": "Proposes unsafe credential storage or cannot explain how later requests are authenticated.",
+      "3": "Describes hashed password storage and a session or token mechanism with expiry.",
+      "5": "Compares session and token approaches, covers revocation, token theft, brute-force protection, and secure transport with clear tradeoffs."
+    },
+    "source": { "kind": "original", "title": "AI Interviewer workshop seed bank" }
+  },
+  {
+    "id": "backend_tenant_data_isolation_01",
+    "schemaVersion": 1,
+    "roles": ["backend"],
+    "seniorities": ["mid", "senior"],
+    "type": "system-design",
+    "topic": "security",
+    "tags": ["multi-tenancy", "authorization", "data-isolation", "defense-in-depth"],
+    "difficulty": 4,
+    "competencyIds": ["backend.security", "backend.data-modeling"],
+    "question": "You're building a service that stores data for many business customers in one shared database. How would you make sure one customer can never read another customer's data?",
+    "intent": "Assess the ability to design tenant isolation with layered controls and to reason about isolation models and their costs.",
+    "expectedSignals": [
+      "scopes every query by tenant and derives the tenant from authenticated context rather than client input",
+      "adds a second layer such as database row-level policies or a data-access layer that enforces scoping",
+      "compares isolation models such as shared tables, separate schemas, or separate databases",
+      "tests for cross-tenant access explicitly",
+      "considers indirect leaks such as caches, search indexes, logs, or exports"
+    ],
+    "redFlags": [
+      "trusts a tenant identifier supplied in the request body"
+    ],
+    "followupProbes": [
+      {
+        "id": "backend_tenant_data_isolation_01.indirect-leaks",
+        "trigger": "candidate only protects primary database queries",
+        "question": "Where else outside the main tables could one customer's data leak to another?"
+      },
+      {
+        "id": "backend_tenant_data_isolation_01.isolation-model",
+        "trigger": "strong answer with layered controls",
+        "question": "When would you move a customer to a fully separate database, and what would that cost you?"
+      }
+    ],
+    "scoringAnchors": {
+      "1": "Relies on client-supplied tenant identifiers or offers no systematic enforcement.",
+      "3": "Scopes queries by an authenticated tenant with a central enforcement point and tests for it.",
+      "5": "Designs layered isolation, compares isolation models against cost and compliance needs, and addresses secondary stores and verification."
+    },
+    "source": { "kind": "original", "title": "AI Interviewer workshop seed bank" }
+  },
+  {
+    "id": "frontend_accessible_signup_form_01",
+    "schemaVersion": 1,
+    "roles": ["frontend"],
+    "seniorities": ["junior", "mid"],
+    "type": "technical",
+    "topic": "accessibility",
+    "tags": ["forms", "labels", "error-messages", "keyboard-navigation", "screen-readers"],
+    "difficulty": 2,
+    "competencyIds": ["frontend.accessibility"],
+    "question": "You're building a sign-up form with several fields and validation errors. What would you do so that people using only a keyboard or a screen reader can complete it successfully?",
+    "intent": "Assess practical knowledge of accessible form markup, error communication, and keyboard operability.",
+    "expectedSignals": [
+      "associates every input with a visible, programmatic label",
+      "keeps a logical tab order and visible focus indicator",
+      "announces validation errors and links each error to its field",
+      "moves focus or provides a summary when submission fails",
+      "does not rely on color alone to indicate an error"
+    ],
+    "redFlags": [
+      "uses placeholder text as the only label"
+    ],
+    "followupProbes": [
+      {
+        "id": "frontend_accessible_signup_form_01.error-announcement",
+        "trigger": "candidate does not say how a screen reader user learns about an error",
+        "question": "After a failed submit, how would a screen reader user find out what went wrong?"
+      },
+      {
+        "id": "frontend_accessible_signup_form_01.verification",
+        "trigger": "candidate does not mention testing",
+        "question": "How would you check that the form actually works for keyboard and screen reader users?"
+      }
+    ],
+    "scoringAnchors": {
+      "1": "Cannot name concrete accessibility measures for a form or relies on visual cues only.",
+      "3": "Uses proper labels, keyboard operability, and an accessible way to communicate errors.",
+      "5": "Covers labeling, focus management on error, linked error descriptions, non-color cues, and verifies with keyboard and assistive technology testing."
+    },
+    "source": { "kind": "original", "title": "AI Interviewer workshop seed bank" }
+  },
+  {
+    "id": "frontend_custom_dropdown_accessibility_01",
+    "schemaVersion": 1,
+    "roles": ["frontend"],
+    "seniorities": ["mid", "senior"],
+    "type": "technical",
+    "topic": "accessibility",
+    "tags": ["aria", "custom-widgets", "focus-management", "keyboard-interaction"],
+    "difficulty": 3,
+    "competencyIds": ["frontend.accessibility", "frontend.component-design"],
+    "question": "Your design calls for a custom dropdown menu that doesn't use the native select element. How would you build it so it's accessible, and how would you verify that it is?",
+    "intent": "Assess understanding of the cost of replacing native controls and how to reproduce expected roles, states, and keyboard behavior.",
+    "expectedSignals": [
+      "questions whether a native element or established pattern could meet the design need first",
+      "assigns appropriate roles and states such as expanded and selected",
+      "implements expected keyboard interaction including arrow keys, escape, and selection",
+      "manages focus when opening and closing the menu",
+      "verifies with a screen reader and keyboard, not only automated checks"
+    ],
+    "redFlags": [
+      "adds ARIA attributes without matching keyboard behavior"
+    ],
+    "followupProbes": [
+      {
+        "id": "frontend_custom_dropdown_accessibility_01.keyboard-model",
+        "trigger": "candidate mentions roles but not keyboard behavior",
+        "question": "Which keys should work while the menu is open, and what should each do?"
+      },
+      {
+        "id": "frontend_custom_dropdown_accessibility_01.native-alternative",
+        "trigger": "strong answer that builds the widget correctly",
+        "question": "When would you push back on the design and use the native control instead?"
+      }
+    ],
+    "scoringAnchors": {
+      "1": "Treats accessibility as adding a label or a single attribute, with no keyboard or state handling.",
+      "3": "Implements suitable roles, states, keyboard navigation, and focus handling, and tests with a keyboard.",
+      "5": "Weighs native versus custom, follows an established interaction pattern completely, manages focus edge cases, and verifies with assistive technology and automated checks."
+    },
+    "source": { "kind": "original", "title": "AI Interviewer workshop seed bank" }
+  },
+  {
+    "id": "frontend_accessibility_practice_01",
+    "schemaVersion": 1,
+    "roles": ["frontend"],
+    "seniorities": ["senior"],
+    "type": "situational",
+    "topic": "accessibility",
+    "tags": ["accessibility-audit", "prevention", "team-process", "automated-checks"],
+    "difficulty": 4,
+    "competencyIds": ["frontend.accessibility", "frontend.testing"],
+    "question": "An audit found dozens of accessibility issues in your team's app, and new features keep adding more. How would you turn this into a sustainable practice rather than a one-time cleanup?",
+    "intent": "Assess the ability to prioritize remediation and build prevention into components, tooling, and team habits.",
+    "expectedSignals": [
+      "prioritizes fixes by user impact and how many flows are affected",
+      "fixes issues at the shared component level so they propagate",
+      "adds automated checks in development or continuous integration while acknowledging their limits",
+      "builds manual testing or acceptance criteria into the feature workflow",
+      "measures progress such as issue counts or audited flows over time"
+    ],
+    "redFlags": [
+      "relies solely on an automated scanner as proof of accessibility"
+    ],
+    "followupProbes": [
+      {
+        "id": "frontend_accessibility_practice_01.prioritization",
+        "trigger": "candidate does not say which issues to fix first",
+        "question": "With limited time, how would you choose which issues to fix first?"
+      },
+      {
+        "id": "frontend_accessibility_practice_01.automation-limits",
+        "trigger": "candidate leans heavily on automated checks",
+        "question": "What kinds of accessibility problems would automated checks miss?"
+      }
+    ],
+    "scoringAnchors": {
+      "1": "Proposes fixing the listed issues once with no prevention or prioritization.",
+      "3": "Prioritizes by impact, fixes shared components, and adds automated checks to prevent regressions.",
+      "5": "Combines impact-based remediation, component-level fixes, automation with known limits, manual testing in the workflow, team enablement, and measured progress."
+    },
+    "source": { "kind": "original", "title": "AI Interviewer workshop seed bank" }
+  },
+  {
+    "id": "frontend_slow_first_render_01",
+    "schemaVersion": 1,
+    "roles": ["frontend"],
+    "seniorities": ["junior", "mid"],
+    "type": "situational",
+    "topic": "web-performance",
+    "tags": ["page-load", "network-waterfall", "images", "render-blocking"],
+    "difficulty": 2,
+    "competencyIds": ["frontend.performance", "frontend.browser-platform"],
+    "question": "A marketing page takes several seconds to show anything useful on a mid-range phone. How would you find out what's slowing it down, and what might you fix first?",
+    "intent": "Assess whether the candidate measures load performance with appropriate tools and recognizes common causes of slow first render.",
+    "expectedSignals": [
+      "measures with browser developer tools or a lab test under realistic device and network conditions",
+      "inspects the network waterfall for large or render-blocking resources",
+      "identifies common causes such as oversized images, blocking scripts, or web fonts",
+      "proposes targeted fixes such as compressing images, deferring scripts, or lazy loading",
+      "re-measures to confirm improvement"
+    ],
+    "redFlags": [
+      "tests only on a fast development machine"
+    ],
+    "followupProbes": [
+      {
+        "id": "frontend_slow_first_render_01.realistic-conditions",
+        "trigger": "candidate does not mention testing conditions",
+        "question": "How would you make sure your measurements reflect what a real user on that phone experiences?"
+      },
+      {
+        "id": "frontend_slow_first_render_01.prioritize-fix",
+        "trigger": "candidate lists many possible fixes",
+        "question": "If you could only make one change this week, how would you pick it?"
+      }
+    ],
+    "scoringAnchors": {
+      "1": "Guesses at causes with no measurement approach.",
+      "3": "Measures with appropriate tools, identifies a plausible bottleneck such as large images or blocking scripts, and proposes a matching fix.",
+      "5": "Measures under realistic conditions, reads the waterfall to prioritize the largest bottleneck, applies targeted fixes, and verifies with before-and-after data."
+    },
+    "source": { "kind": "original", "title": "AI Interviewer workshop seed bank" }
+  },
+  {
+    "id": "frontend_large_list_rendering_01",
+    "schemaVersion": 1,
+    "roles": ["frontend"],
+    "seniorities": ["mid", "senior"],
+    "type": "technical",
+    "topic": "web-performance",
+    "tags": ["virtualization", "pagination", "rendering-cost", "scroll-performance"],
+    "difficulty": 3,
+    "competencyIds": ["frontend.performance", "frontend.component-design"],
+    "question": "A screen renders a list of ten thousand rows, and scrolling feels janky. What approaches would you consider, and what are their tradeoffs?",
+    "intent": "Assess knowledge of rendering cost and techniques for large lists, along with their effects on usability and accessibility.",
+    "expectedSignals": [
+      "profiles to confirm whether rendering, layout, or data processing is the bottleneck",
+      "considers pagination, incremental loading, or windowing that renders only visible rows",
+      "reduces unnecessary re-renders of rows",
+      "notes tradeoffs of windowing such as find-in-page, variable row heights, and screen reader behavior",
+      "questions whether users actually need all rows at once"
+    ],
+    "redFlags": [
+      "proposes a library without explaining what problem it solves"
+    ],
+    "followupProbes": [
+      {
+        "id": "frontend_large_list_rendering_01.windowing-costs",
+        "trigger": "candidate proposes windowing without downsides",
+        "question": "What might break for users when only visible rows exist in the page?"
+      },
+      {
+        "id": "frontend_large_list_rendering_01.profiling",
+        "trigger": "candidate does not mention confirming the bottleneck",
+        "question": "How would you confirm that rendering is really what makes scrolling slow?"
+      }
+    ],
+    "scoringAnchors": {
+      "1": "Cannot explain why a huge list is slow or proposes an unrelated fix.",
+      "3": "Proposes windowing or pagination and reducing re-renders, with at least one tradeoff.",
+      "5": "Profiles first, compares several approaches against user needs, and addresses windowing tradeoffs such as accessibility, search, and dynamic heights."
+    },
+    "source": { "kind": "original", "title": "AI Interviewer workshop seed bank" }
+  },
+  {
+    "id": "frontend_bundle_size_growth_01",
+    "schemaVersion": 1,
+    "roles": ["frontend"],
+    "seniorities": ["mid", "senior"],
+    "type": "technical",
+    "topic": "web-performance",
+    "tags": ["bundle-size", "code-splitting", "dependencies", "performance-budgets"],
+    "difficulty": 4,
+    "competencyIds": ["frontend.performance", "shared.tradeoff-reasoning"],
+    "question": "Over a year, your single-page app's JavaScript bundle has tripled in size. How would you reduce it and keep it from growing back?",
+    "intent": "Assess the ability to analyze bundle composition, apply reductions with awareness of tradeoffs, and introduce guardrails.",
+    "expectedSignals": [
+      "analyzes the bundle to see which modules and dependencies dominate",
+      "splits code by route or feature so users download only what they need",
+      "replaces or removes heavy dependencies where justified",
+      "weighs splitting against extra requests or loading delays",
+      "adds a size budget or automated check that fails when the bundle grows"
+    ],
+    "redFlags": [
+      "focuses only on minification without examining what is in the bundle"
+    ],
+    "followupProbes": [
+      {
+        "id": "frontend_bundle_size_growth_01.guardrail",
+        "trigger": "candidate reduces size but does not prevent regrowth",
+        "question": "How would you stop the next new dependency from undoing your work?"
+      },
+      {
+        "id": "frontend_bundle_size_growth_01.split-tradeoff",
+        "trigger": "candidate proposes aggressive code splitting",
+        "question": "Is there a point where splitting the code makes the experience worse?"
+      }
+    ],
+    "scoringAnchors": {
+      "1": "Proposes generic fixes without analyzing what made the bundle grow.",
+      "3": "Analyzes the bundle, applies code splitting or dependency changes, and mentions a size check.",
+      "5": "Prioritizes by measured impact, balances splitting against loading behavior, addresses dependency governance, and enforces budgets in the build."
+    },
+    "source": { "kind": "original", "title": "AI Interviewer workshop seed bank" }
+  },
+  {
+    "id": "frontend_state_placement_01",
+    "schemaVersion": 1,
+    "roles": ["frontend"],
+    "seniorities": ["junior", "mid"],
+    "type": "technical",
+    "topic": "state-management",
+    "tags": ["local-state", "lifting-state", "global-store", "derived-state"],
+    "difficulty": 2,
+    "competencyIds": ["frontend.state-management"],
+    "question": "In a component-based UI, how do you decide whether a piece of state should live inside one component, be lifted to a parent, or go into shared app-wide state? Please use an example.",
+    "intent": "Assess reasoning about state ownership and scope rather than defaulting to a global store.",
+    "expectedSignals": [
+      "keeps state as local as possible and lifts it only when multiple components need it",
+      "uses a concrete example to justify each placement",
+      "recognizes derived values that should be computed rather than stored",
+      "mentions the cost of global state such as coupling or unnecessary re-renders",
+      "distinguishes server data from purely UI state"
+    ],
+    "redFlags": [
+      "puts all state in a global store by default without reasoning"
+    ],
+    "followupProbes": [
+      {
+        "id": "frontend_state_placement_01.derived-state",
+        "trigger": "candidate stores values that could be computed",
+        "question": "Is any of that state something you could calculate from other values instead of storing?"
+      },
+      {
+        "id": "frontend_state_placement_01.server-data",
+        "trigger": "strong answer about UI state",
+        "question": "Would you treat data fetched from the server any differently?"
+      }
+    ],
+    "scoringAnchors": {
+      "1": "Cannot articulate a reason for where state lives.",
+      "3": "Explains local versus lifted versus shared state with a fitting example.",
+      "5": "Applies clear ownership principles, avoids duplicated or derived state, distinguishes server from UI state, and names the costs of each option."
+    },
+    "source": { "kind": "original", "title": "AI Interviewer workshop seed bank" }
+  },
+  {
+    "id": "frontend_shared_task_list_sync_01",
+    "schemaVersion": 1,
+    "roles": ["frontend"],
+    "seniorities": ["mid", "senior"],
+    "type": "system-design",
+    "topic": "state-management",
+    "tags": ["server-state", "optimistic-updates", "real-time-updates", "conflict-handling"],
+    "difficulty": 3,
+    "competencyIds": ["frontend.state-management", "shared.tradeoff-reasoning"],
+    "question": "Your app shows a task list that several teammates edit at the same time. How would you keep what each person sees reasonably up to date, and what happens in the interface when someone's save fails?",
+    "intent": "Assess handling of server state freshness, optimistic updates, and conflict or failure states in the UI.",
+    "expectedSignals": [
+      "chooses an update mechanism such as polling, refetch on focus, or push updates and explains why",
+      "considers optimistic updates and how to roll them back on failure",
+      "shows the user a clear, recoverable error when a save fails",
+      "addresses conflicting edits to the same task",
+      "avoids losing the user's unsaved input"
+    ],
+    "redFlags": [
+      "silently discards a failed edit"
+    ],
+    "followupProbes": [
+      {
+        "id": "frontend_shared_task_list_sync_01.conflict",
+        "trigger": "candidate does not consider two people editing the same task",
+        "question": "What should happen if two people change the same task within a few seconds of each other?"
+      },
+      {
+        "id": "frontend_shared_task_list_sync_01.update-choice",
+        "trigger": "candidate picks real-time push immediately",
+        "question": "When would simple polling be good enough here?"
+      }
+    ],
+    "scoringAnchors": {
+      "1": "Has no plan for staleness or failure, or loses user changes silently.",
+      "3": "Picks a reasonable refresh strategy, handles failed saves with a visible recoverable state, and mentions optimistic updates.",
+      "5": "Justifies the sync mechanism against cost, handles rollback and conflicts explicitly, preserves user input, and designs clear feedback for each state."
+    },
+    "source": { "kind": "original", "title": "AI Interviewer workshop seed bank" }
+  },
+  {
+    "id": "frontend_untangle_global_state_01",
+    "schemaVersion": 1,
+    "roles": ["frontend"],
+    "seniorities": ["senior"],
+    "type": "situational",
+    "topic": "state-management",
+    "tags": ["refactoring", "global-store", "incremental-migration", "module-boundaries"],
+    "difficulty": 4,
+    "competencyIds": ["frontend.state-management", "frontend.component-design"],
+    "question": "A large app has grown a tangle of global state that many features read and write, and bugs keep appearing when one feature changes it. How would you untangle it without stopping feature work?",
+    "intent": "Assess the ability to plan an incremental architectural refactor with clear ownership boundaries and risk control.",
+    "expectedSignals": [
+      "maps which features read and write which parts of the state",
+      "defines ownership so each slice has one module responsible for changes",
+      "migrates incrementally, feature by feature, rather than rewriting everything",
+      "adds tests or contracts around shared state before changing it",
+      "agrees with the team on conventions that prevent the tangle from returning"
+    ],
+    "redFlags": [
+      "proposes a full rewrite with a new library as the main solution"
+    ],
+    "followupProbes": [
+      {
+        "id": "frontend_untangle_global_state_01.first-step",
+        "trigger": "candidate describes an end state but not how to start",
+        "question": "What would the very first change you ship look like?"
+      },
+      {
+        "id": "frontend_untangle_global_state_01.safety-net",
+        "trigger": "candidate does not mention protecting existing behavior",
+        "question": "How would you avoid introducing new bugs while moving state around?"
+      }
+    ],
+    "scoringAnchors": {
+      "1": "Proposes a rewrite or library swap without a migration plan.",
+      "3": "Maps usage, assigns ownership, and migrates incrementally with some testing.",
+      "5": "Builds an evidence-based map, sequences low-risk incremental steps with safety nets, defines ownership boundaries, and sets team conventions to keep them."
+    },
+    "source": { "kind": "original", "title": "AI Interviewer workshop seed bank" }
+  },
+  {
+    "id": "frontend_search_component_tests_01",
+    "schemaVersion": 1,
+    "roles": ["frontend"],
+    "seniorities": ["junior", "mid"],
+    "type": "technical",
+    "topic": "testing",
+    "tags": ["component-tests", "loading-states", "error-states", "mocking"],
+    "difficulty": 2,
+    "competencyIds": ["frontend.testing"],
+    "question": "You've built a component that fetches search results and displays them, with a loading state and an error state. What tests would you write for it, and what would each one check?",
+    "intent": "Assess whether the candidate tests observable behavior across important states with controlled network responses.",
+    "expectedSignals": [
+      "tests the loading, success, empty, and error states",
+      "controls network responses with a mock or fake server",
+      "asserts on what the user sees or can do rather than internal implementation",
+      "considers user interaction such as typing a query or retrying after an error"
+    ],
+    "redFlags": [
+      "tests only that the component renders without crashing"
+    ],
+    "followupProbes": [
+      {
+        "id": "frontend_search_component_tests_01.empty-state",
+        "trigger": "candidate covers success and error but not empty results",
+        "question": "Is there another state between success and error that you would want a test for?"
+      },
+      {
+        "id": "frontend_search_component_tests_01.implementation-detail",
+        "trigger": "candidate asserts on internal state or function calls",
+        "question": "If someone refactored the component without changing its behavior, would your tests still pass?"
+      }
+    ],
+    "scoringAnchors": {
+      "1": "Cannot describe meaningful tests or only checks that the component renders.",
+      "3": "Tests loading, success, and error states with mocked responses and user-visible assertions.",
+      "5": "Covers all meaningful states and interactions, isolates the network deliberately, and writes behavior-focused tests that survive refactoring."
+    },
+    "source": { "kind": "original", "title": "AI Interviewer workshop seed bank" }
+  },
+  {
+    "id": "frontend_flaky_end_to_end_suite_01",
+    "schemaVersion": 1,
+    "roles": ["frontend"],
+    "seniorities": ["mid", "senior"],
+    "type": "situational",
+    "topic": "testing",
+    "tags": ["flaky-tests", "end-to-end-tests", "test-reliability", "ci"],
+    "difficulty": 3,
+    "competencyIds": ["frontend.testing", "shared.problem-solving"],
+    "question": "Your end-to-end test suite fails randomly about one run in five, and developers have started ignoring it. How would you make it trustworthy again?",
+    "intent": "Assess systematic diagnosis of test flakiness and judgment about test design and team trust.",
+    "expectedSignals": [
+      "collects data on which tests fail and how often",
+      "identifies common causes such as timing assumptions, shared test data, or external dependencies",
+      "replaces fixed waits with waiting on observable conditions",
+      "isolates test data and environment between runs",
+      "quarantines or fixes flaky tests with ownership instead of blanket retries"
+    ],
+    "redFlags": [
+      "adds automatic retries to every test as the whole solution"
+    ],
+    "followupProbes": [
+      {
+        "id": "frontend_flaky_end_to_end_suite_01.retry-tradeoff",
+        "trigger": "candidate proposes retries",
+        "question": "What is the risk of simply retrying failed tests automatically?"
+      },
+      {
+        "id": "frontend_flaky_end_to_end_suite_01.suite-shape",
+        "trigger": "strong answer about fixing individual tests",
+        "question": "Would you change which behaviors are tested end to end versus at lower levels?"
+      }
+    ],
+    "scoringAnchors": {
+      "1": "Proposes disabling the suite or retrying everything without investigation.",
+      "3": "Gathers failure data, fixes common causes such as timing and shared data, and handles flaky tests explicitly.",
+      "5": "Diagnoses systematically, fixes root causes, rebalances the test pyramid, sets ownership and quarantine policy, and tracks reliability over time."
+    },
+    "source": { "kind": "original", "title": "AI Interviewer workshop seed bank" }
+  },
+  {
+    "id": "frontend_reusable_button_api_01",
+    "schemaVersion": 1,
+    "roles": ["frontend"],
+    "seniorities": ["junior", "mid"],
+    "type": "technical",
+    "topic": "component-design",
+    "tags": ["component-api", "props", "reusability", "design-systems"],
+    "difficulty": 2,
+    "competencyIds": ["frontend.component-design"],
+    "question": "You're asked to build a button component that the whole team will reuse. What props or options would you give it, and what would you deliberately leave out?",
+    "intent": "Assess judgment in designing a small, consistent, accessible component API that resists one-off customization.",
+    "expectedSignals": [
+      "defines a small set of variants and sizes aligned with the design system",
+      "handles disabled and loading states",
+      "keeps native button behavior and accessibility such as type and focus",
+      "avoids arbitrary style overrides that break consistency",
+      "explains how the API could grow without breaking existing uses"
+    ],
+    "redFlags": [
+      "exposes every style property as a prop"
+    ],
+    "followupProbes": [
+      {
+        "id": "frontend_reusable_button_api_01.link-case",
+        "trigger": "candidate does not consider buttons that navigate",
+        "question": "What would you do when someone needs something that looks like a button but navigates to another page?"
+      },
+      {
+        "id": "frontend_reusable_button_api_01.leave-out",
+        "trigger": "candidate lists only props to add",
+        "question": "What is one request you would say no to, and why?"
+      }
+    ],
+    "scoringAnchors": {
+      "1": "Proposes either almost no API or unlimited customization, with no reasoning.",
+      "3": "Defines sensible variants and states and preserves native button behavior.",
+      "5": "Designs a constrained, accessible, evolvable API, explains what is excluded and why, and handles edge cases like link-styled buttons."
+    },
+    "source": { "kind": "original", "title": "AI Interviewer workshop seed bank" }
+  },
+  {
+    "id": "frontend_main_thread_freeze_01",
+    "schemaVersion": 1,
+    "roles": ["frontend"],
+    "seniorities": ["mid", "senior"],
+    "type": "technical",
+    "topic": "browser-platform",
+    "tags": ["event-loop", "main-thread", "web-workers", "responsiveness"],
+    "difficulty": 3,
+    "competencyIds": ["frontend.browser-platform", "frontend.performance"],
+    "question": "Clicking a button in your app triggers a heavy calculation, and the whole page freezes for two seconds. Why does that happen in the browser, and how would you fix it?",
+    "intent": "Assess understanding of the single main thread and practical techniques to keep the interface responsive.",
+    "expectedSignals": [
+      "explains that long tasks on the main thread block input handling and rendering",
+      "considers moving the work to a background worker",
+      "considers breaking work into smaller chunks that yield to the browser",
+      "questions whether the calculation can be reduced, cached, or done on the server",
+      "gives the user feedback while work is in progress"
+    ],
+    "redFlags": [
+      "believes asynchronous functions alone make CPU-heavy work non-blocking"
+    ],
+    "followupProbes": [
+      {
+        "id": "frontend_main_thread_freeze_01.async-misconception",
+        "trigger": "candidate suggests wrapping the work in a promise or async function",
+        "question": "Would making that function async on its own stop the page from freezing? Why or why not?"
+      },
+      {
+        "id": "frontend_main_thread_freeze_01.worker-tradeoff",
+        "trigger": "candidate proposes a worker",
+        "question": "What limitations or costs come with moving the work to a worker?"
+      }
+    ],
+    "scoringAnchors": {
+      "1": "Cannot explain why the page freezes or proposes a fix that keeps the work on the main thread unchanged.",
+      "3": "Explains main-thread blocking and proposes a worker or chunking approach.",
+      "5": "Explains the event loop clearly, compares worker, chunking, and algorithmic or server-side options with their costs, and preserves user feedback."
+    },
+    "source": { "kind": "original", "title": "AI Interviewer workshop seed bank" }
+  },
+  {
+    "id": "frontend_rendering_strategy_choice_01",
+    "schemaVersion": 1,
+    "roles": ["frontend"],
+    "seniorities": ["senior"],
+    "type": "system-design",
+    "topic": "browser-platform",
+    "tags": ["server-rendering", "static-generation", "client-rendering", "seo"],
+    "difficulty": 4,
+    "competencyIds": ["frontend.browser-platform", "shared.tradeoff-reasoning"],
+    "question": "A new product has public marketing pages and a logged-in dashboard. How would you decide between server rendering, static generation, and client-side rendering for each part?",
+    "intent": "Assess the ability to match rendering strategies to content, performance, discoverability, and operational constraints.",
+    "expectedSignals": [
+      "matches rarely changing public pages to static or server rendering for fast first paint and discoverability",
+      "considers client-side rendering for highly interactive authenticated views",
+      "discusses data freshness and personalization when choosing a strategy",
+      "accounts for operational cost such as server infrastructure and caching",
+      "notes hydration cost or complexity of mixing strategies"
+    ],
+    "redFlags": [
+      "picks one strategy for everything based on familiarity alone"
+    ],
+    "followupProbes": [
+      {
+        "id": "frontend_rendering_strategy_choice_01.personalized-public",
+        "trigger": "candidate treats public pages as fully static",
+        "question": "What changes if the marketing pages show personalized pricing for logged-in visitors?"
+      },
+      {
+        "id": "frontend_rendering_strategy_choice_01.operational-cost",
+        "trigger": "candidate does not mention infrastructure or caching",
+        "question": "How would your choice affect what the team has to run and maintain?"
+      }
+    ],
+    "scoringAnchors": {
+      "1": "Chooses a single approach with no reasoning tied to the two kinds of pages.",
+      "3": "Assigns appropriate strategies to public and dashboard pages with reasons tied to performance and discoverability.",
+      "5": "Weighs freshness, personalization, interactivity, hydration, and operational cost, and explains how the choice could evolve."
+    },
+    "source": { "kind": "original", "title": "AI Interviewer workshop seed bank" }
+  },
+  {
+    "id": "product_inherited_backlog_01",
+    "schemaVersion": 1,
+    "roles": ["product"],
+    "seniorities": ["junior", "mid"],
+    "type": "situational",
+    "topic": "prioritization",
+    "tags": ["backlog", "prioritization-frameworks", "impact-effort", "roadmap"],
+    "difficulty": 2,
+    "competencyIds": ["product.prioritization"],
+    "question": "You've inherited a backlog of forty feature requests from customers, sales, and engineering. How would you decide what the team works on next quarter?",
+    "intent": "Assess whether the candidate prioritizes against goals and evidence using a consistent, explainable method.",
+    "expectedSignals": [
+      "anchors prioritization to team or company goals",
+      "groups related requests to find the underlying problems",
+      "estimates value and effort or uses a consistent scoring approach",
+      "seeks evidence such as usage data or customer impact rather than loudness of the request",
+      "communicates the resulting choices and what is deferred"
+    ],
+    "redFlags": [
+      "prioritizes by whoever asked most recently or most loudly"
+    ],
+    "followupProbes": [
+      {
+        "id": "product_inherited_backlog_01.evidence",
+        "trigger": "candidate scores items without saying where the estimates come from",
+        "question": "Where would the numbers in your scoring actually come from?"
+      },
+      {
+        "id": "product_inherited_backlog_01.deferred-requests",
+        "trigger": "candidate does not mention communicating decisions",
+        "question": "How would you handle the people whose requests did not make the cut?"
+      }
+    ],
+    "scoringAnchors": {
+      "1": "Has no consistent method or prioritizes by request volume or seniority of the requester alone.",
+      "3": "Ties choices to goals, applies a consistent value-versus-effort method, and communicates decisions.",
+      "5": "Clusters requests into problems, grounds estimates in evidence, makes explicit tradeoffs against goals, and closes the loop with stakeholders."
+    },
+    "source": { "kind": "original", "title": "AI Interviewer workshop seed bank" }
+  },
+  {
+    "id": "product_rebuild_versus_features_01",
+    "schemaVersion": 1,
+    "roles": ["product"],
+    "seniorities": ["mid", "senior"],
+    "type": "situational",
+    "topic": "prioritization",
+    "tags": ["technical-debt", "capacity-allocation", "growth-goals", "risk"],
+    "difficulty": 3,
+    "competencyIds": ["product.prioritization", "shared.tradeoff-reasoning"],
+    "question": "Engineering wants to spend a quarter rebuilding a fragile part of the system, while leadership wants new features to hit a growth target. How would you decide how to split the team's time?",
+    "intent": "Assess the ability to make the cost of technical risk legible and allocate capacity with explicit tradeoffs.",
+    "expectedSignals": [
+      "asks engineering to quantify the cost of the fragility, such as incidents, slowed delivery, or risk",
+      "connects the rebuild to the growth goal where possible",
+      "considers splitting capacity or sequencing incremental improvements",
+      "makes the tradeoff explicit to leadership with a recommendation",
+      "defines how to check whether the chosen split is working"
+    ],
+    "redFlags": [
+      "treats engineering concerns as purely internal preference without investigating"
+    ],
+    "followupProbes": [
+      {
+        "id": "product_rebuild_versus_features_01.quantify-risk",
+        "trigger": "candidate accepts or rejects the rebuild without evidence",
+        "question": "What information would you want from engineering before deciding?"
+      },
+      {
+        "id": "product_rebuild_versus_features_01.revisit",
+        "trigger": "strong answer with a clear split",
+        "question": "How would you know mid-quarter that the split needs to change?"
+      }
+    ],
+    "scoringAnchors": {
+      "1": "Picks one side without examining costs or engaging both groups.",
+      "3": "Gathers evidence of the fragility's cost, proposes a reasoned split or sequence, and explains it to leadership.",
+      "5": "Translates technical risk into business terms, finds options that serve both goals, sets checkpoints to revisit, and communicates tradeoffs transparently."
+    },
+    "source": { "kind": "original", "title": "AI Interviewer workshop seed bank" }
+  },
+  {
+    "id": "product_wishlist_success_metrics_01",
+    "schemaVersion": 1,
+    "roles": ["product"],
+    "seniorities": ["junior", "mid"],
+    "type": "technical",
+    "topic": "metrics",
+    "tags": ["success-metrics", "guardrail-metrics", "launch-review", "leading-indicators"],
+    "difficulty": 2,
+    "competencyIds": ["product.metrics"],
+    "question": "Your team is launching a feature that lets shoppers save items to a wishlist. How would you define whether the launch is successful?",
+    "intent": "Assess the ability to connect a feature to user and business outcomes through measurable success and guardrail metrics.",
+    "expectedSignals": [
+      "states the user problem or goal the wishlist is meant to serve",
+      "defines an adoption or engagement metric for the feature itself",
+      "connects to a downstream outcome such as return visits or purchases from saved items",
+      "adds a guardrail metric to catch harm such as reduced immediate purchases",
+      "sets a time frame or target for evaluation"
+    ],
+    "redFlags": [
+      "defines success only as the feature shipping on time"
+    ],
+    "followupProbes": [
+      {
+        "id": "product_wishlist_success_metrics_01.guardrail",
+        "trigger": "candidate lists only positive metrics",
+        "question": "Is there any way this feature could hurt the business, and how would you notice?"
+      },
+      {
+        "id": "product_wishlist_success_metrics_01.target",
+        "trigger": "candidate names metrics but no target",
+        "question": "What number would make you call this launch a success?"
+      }
+    ],
+    "scoringAnchors": {
+      "1": "Cannot name a meaningful metric or equates shipping with success.",
+      "3": "Defines a feature adoption metric and a downstream outcome metric tied to the user goal.",
+      "5": "Links the goal to a metric chain from adoption to outcome, adds guardrails, sets targets and timing, and notes measurement caveats."
+    },
+    "source": { "kind": "original", "title": "AI Interviewer workshop seed bank" }
+  },
+  {
+    "id": "product_active_users_drop_01",
+    "schemaVersion": 1,
+    "roles": ["product"],
+    "seniorities": ["mid", "senior"],
+    "type": "situational",
+    "topic": "metrics",
+    "tags": ["metric-investigation", "segmentation", "data-quality", "root-cause"],
+    "difficulty": 3,
+    "competencyIds": ["product.metrics", "shared.problem-solving"],
+    "question": "The weekly active users metric for your app dropped twelve percent last week. How would you figure out what happened?",
+    "intent": "Assess structured investigation of a metric change, including data validity, segmentation, and hypothesis testing.",
+    "expectedSignals": [
+      "first checks whether the drop is real, such as tracking changes or data pipeline issues",
+      "segments by platform, region, user cohort, or acquisition channel",
+      "checks for internal changes such as releases or experiments and external events",
+      "forms and tests hypotheses rather than listing every possibility",
+      "decides on next actions and who to inform"
+    ],
+    "redFlags": [
+      "jumps to a single explanation without checking data"
+    ],
+    "followupProbes": [
+      {
+        "id": "product_active_users_drop_01.data-validity",
+        "trigger": "candidate assumes the drop is real",
+        "question": "How would you rule out a measurement problem before investigating user behavior?"
+      },
+      {
+        "id": "product_active_users_drop_01.single-segment",
+        "trigger": "candidate proposes segmentation",
+        "question": "Suppose the entire drop comes from one mobile platform. What would you do next?"
+      }
+    ],
+    "scoringAnchors": {
+      "1": "Offers a guess without an investigation plan.",
+      "3": "Validates the data, segments the drop, and checks recent internal and external changes.",
+      "5": "Runs a prioritized hypothesis-driven investigation, rules out measurement issues, isolates the affected segment, and plans communication and response."
+    },
+    "source": { "kind": "original", "title": "AI Interviewer workshop seed bank" }
+  },
+  {
+    "id": "product_engagement_metric_trust_01",
+    "schemaVersion": 1,
+    "roles": ["product"],
+    "seniorities": ["senior"],
+    "type": "situational",
+    "topic": "metrics",
+    "tags": ["north-star-metric", "metric-gaming", "user-trust", "long-term-value"],
+    "difficulty": 4,
+    "competencyIds": ["product.metrics", "product.strategy"],
+    "question": "Your team is measured on time spent in the app, and you suspect pushing it higher is starting to hurt user trust. How would you rethink what the team measures?",
+    "intent": "Assess the ability to recognize misaligned metrics, gather evidence, and propose measures that better represent long-term value.",
+    "expectedSignals": [
+      "gathers evidence that the current metric diverges from user value, such as complaints, churn, or research",
+      "defines what genuine user value looks like for this product",
+      "proposes a revised primary metric or a balanced set with guardrails",
+      "anticipates how any new metric could also be gamed",
+      "plans how to convince leadership and transition the team's goals"
+    ],
+    "redFlags": [
+      "abandons measurement altogether in favor of intuition"
+    ],
+    "followupProbes": [
+      {
+        "id": "product_engagement_metric_trust_01.evidence",
+        "trigger": "candidate accepts the suspicion without testing it",
+        "question": "How would you confirm that the metric is really hurting trust?"
+      },
+      {
+        "id": "product_engagement_metric_trust_01.leadership",
+        "trigger": "strong answer with a new metric",
+        "question": "Leadership likes the current number because it is easy to report. How would you bring them along?"
+      }
+    ],
+    "scoringAnchors": {
+      "1": "Keeps optimizing the current metric or proposes no measurable alternative.",
+      "3": "Gathers evidence of harm and proposes a better-aligned metric with a guardrail.",
+      "5": "Builds an evidence case, defines value carefully, designs a balanced measurement set resistant to gaming, and plans an organizational transition."
+    },
+    "source": { "kind": "original", "title": "AI Interviewer workshop seed bank" }
+  },
+  {
+    "id": "product_estimate_misses_promise_01",
+    "schemaVersion": 1,
+    "roles": ["product"],
+    "seniorities": ["junior", "mid"],
+    "type": "situational",
+    "topic": "stakeholder-management",
+    "tags": ["commitments", "scope-negotiation", "partner-communication", "estimates"],
+    "difficulty": 2,
+    "competencyIds": ["product.stakeholder-management"],
+    "question": "An engineer tells you that a feature you promised to a partner for next month will actually take three months. What do you do?",
+    "intent": "Assess how the candidate responds to a broken commitment: understanding the estimate, exploring options, and communicating early and honestly.",
+    "expectedSignals": [
+      "seeks to understand what drives the estimate before reacting",
+      "explores options such as reduced scope, phased delivery, or adding resources",
+      "informs the partner promptly and honestly rather than waiting",
+      "brings a recommendation rather than only bad news",
+      "reflects on how the original promise was made"
+    ],
+    "redFlags": [
+      "pressures the engineer to hit the original date without discussing scope"
+    ],
+    "followupProbes": [
+      {
+        "id": "product_estimate_misses_promise_01.partner-conversation",
+        "trigger": "candidate focuses on internal options only",
+        "question": "What exactly would you tell the partner, and when?"
+      },
+      {
+        "id": "product_estimate_misses_promise_01.prevention",
+        "trigger": "candidate resolves the immediate problem",
+        "question": "What would you do differently next time before making a date commitment?"
+      }
+    ],
+    "scoringAnchors": {
+      "1": "Hides the problem or simply demands the original date.",
+      "3": "Understands the estimate, identifies scope or phasing options, and communicates promptly with the partner.",
+      "5": "Diagnoses the gap, brings a clear recommendation with options, communicates transparently, and changes how commitments are made."
+    },
+    "source": { "kind": "original", "title": "AI Interviewer workshop seed bank" }
+  },
+  {
+    "id": "product_large_customer_custom_request_01",
+    "schemaVersion": 1,
+    "roles": ["product"],
+    "seniorities": ["mid", "senior"],
+    "type": "situational",
+    "topic": "prioritization",
+    "tags": ["customer-requests", "sales-alignment", "roadmap-fit", "saying-no"],
+    "difficulty": 3,
+    "competencyIds": ["product.stakeholder-management", "product.prioritization"],
+    "question": "Your largest customer is asking for a custom feature that doesn't fit your roadmap, and sales says the renewal depends on it. How would you handle it?",
+    "intent": "Assess the ability to balance a high-stakes customer request against product direction while working constructively with sales.",
+    "expectedSignals": [
+      "digs into the underlying problem the customer is trying to solve",
+      "checks whether other customers share the need",
+      "quantifies the revenue at risk against the cost and long-term maintenance of the feature",
+      "explores alternatives such as a configurable or partial solution",
+      "aligns with sales and leadership on a decision and communicates it clearly"
+    ],
+    "redFlags": [
+      "agrees immediately to build the feature exactly as requested",
+      "refuses without understanding the customer need"
+    ],
+    "followupProbes": [
+      {
+        "id": "product_large_customer_custom_request_01.underlying-need",
+        "trigger": "candidate debates the feature without exploring the customer's goal",
+        "question": "What would you want to learn from the customer directly before deciding?"
+      },
+      {
+        "id": "product_large_customer_custom_request_01.decline",
+        "trigger": "candidate leans toward declining",
+        "question": "If you decide not to build it, how would you work with sales to keep the relationship?"
+      }
+    ],
+    "scoringAnchors": {
+      "1": "Either accepts or rejects reflexively without understanding the need or the tradeoff.",
+      "3": "Explores the underlying need, weighs revenue against cost, and aligns with sales on a decision.",
+      "5": "Reframes around the shared problem, sizes demand across customers, compares creative alternatives with long-term costs, and manages the decision with sales and the customer."
+    },
+    "source": { "kind": "original", "title": "AI Interviewer workshop seed bank" }
+  },
+  {
+    "id": "product_design_engineering_deadlock_01",
+    "schemaVersion": 1,
+    "roles": ["product"],
+    "seniorities": ["mid", "senior"],
+    "type": "situational",
+    "topic": "stakeholder-management",
+    "tags": ["cross-functional-disagreement", "decision-process", "onboarding-flow", "user-evidence"],
+    "difficulty": 3,
+    "competencyIds": ["product.stakeholder-management", "shared.tradeoff-reasoning"],
+    "question": "Your designer and your tech lead strongly disagree about how a new onboarding flow should work, and the debate has stalled the project for two weeks. How would you move it forward?",
+    "intent": "Assess facilitation of a cross-functional disagreement toward a decision grounded in user evidence and shared criteria.",
+    "expectedSignals": [
+      "understands each side's underlying concerns rather than their positions alone",
+      "establishes shared decision criteria such as user outcomes, cost, and timeline",
+      "uses evidence such as prototypes, user tests, or data to compare options",
+      "sets a clear decision owner and deadline",
+      "maintains the working relationship after the decision"
+    ],
+    "redFlags": [
+      "decides by siding with the more senior person without examining the arguments"
+    ],
+    "followupProbes": [
+      {
+        "id": "product_design_engineering_deadlock_01.decision-owner",
+        "trigger": "candidate facilitates but never says who decides",
+        "question": "If they still disagree after all that, who makes the final call and how?"
+      },
+      {
+        "id": "product_design_engineering_deadlock_01.cheap-evidence",
+        "trigger": "candidate proposes gathering evidence",
+        "question": "What is the quickest way you could get evidence to compare the two approaches?"
+      }
+    ],
+    "scoringAnchors": {
+      "1": "Avoids the conflict or resolves it arbitrarily.",
+      "3": "Clarifies each side's concerns, agrees on criteria, and drives to a decision with a deadline.",
+      "5": "Surfaces underlying concerns, uses fast evidence to compare options, makes the decision process explicit, and protects the relationship afterward."
+    },
+    "source": { "kind": "original", "title": "AI Interviewer workshop seed bank" }
+  },
+  {
+    "id": "product_executive_redirect_01",
+    "schemaVersion": 1,
+    "roles": ["product"],
+    "seniorities": ["senior"],
+    "type": "situational",
+    "topic": "stakeholder-management",
+    "tags": ["executive-stakeholders", "competitive-response", "change-management", "strategy-alignment"],
+    "difficulty": 4,
+    "competencyIds": ["product.stakeholder-management", "product.strategy"],
+    "question": "Halfway through a project, a senior executive asks you to change direction based on a competitor's announcement. How would you respond?",
+    "intent": "Assess the ability to evaluate a high-pressure strategic request on its merits and manage the consequences for the team.",
+    "expectedSignals": [
+      "clarifies what the executive is worried about and what outcome they want",
+      "evaluates the competitor's move against customer needs and the current strategy",
+      "lays out the cost of switching, including work lost and commitments affected",
+      "proposes options such as a quick response, a test, or staying the course with reasons",
+      "communicates the decision and its impact to the team"
+    ],
+    "redFlags": [
+      "changes direction immediately without assessing impact"
+    ],
+    "followupProbes": [
+      {
+        "id": "product_executive_redirect_01.disagree",
+        "trigger": "candidate thinks the current direction is better",
+        "question": "How would you push back if you believe the executive's request is a mistake?"
+      },
+      {
+        "id": "product_executive_redirect_01.team-impact",
+        "trigger": "candidate does not mention the team",
+        "question": "How would you handle the team's morale if half their work is set aside?"
+      }
+    ],
+    "scoringAnchors": {
+      "1": "Complies without analysis or dismisses the executive without engaging.",
+      "3": "Clarifies the concern, assesses the competitive threat and switching cost, and proposes a reasoned response.",
+      "5": "Separates signal from reaction, frames options with costs and evidence, can disagree constructively, and manages team and stakeholder impact."
+    },
+    "source": { "kind": "original", "title": "AI Interviewer workshop seed bank" }
+  },
+  {
+    "id": "product_checkout_form_experiment_01",
+    "schemaVersion": 1,
+    "roles": ["product"],
+    "seniorities": ["junior", "mid"],
+    "type": "technical",
+    "topic": "experimentation",
+    "tags": ["ab-testing", "hypothesis", "sample-size", "conversion"],
+    "difficulty": 2,
+    "competencyIds": ["product.experimentation"],
+    "question": "You want to test whether a shorter checkout form increases completed purchases. How would you set up that experiment?",
+    "intent": "Assess fundamentals of experiment design: hypothesis, randomization, metrics, duration, and decision rules.",
+    "expectedSignals": [
+      "states a clear hypothesis and primary metric such as completed purchase rate",
+      "randomly assigns users to the current and shorter forms",
+      "considers how long to run or how many users are needed to detect a meaningful change",
+      "adds a guardrail metric such as order value or fraud rate",
+      "defines in advance what result would lead to shipping"
+    ],
+    "redFlags": [
+      "compares this week's results to last week's and calls it an experiment"
+    ],
+    "followupProbes": [
+      {
+        "id": "product_checkout_form_experiment_01.duration",
+        "trigger": "candidate does not mention run length or sample size",
+        "question": "How would you decide when you have run the test long enough?"
+      },
+      {
+        "id": "product_checkout_form_experiment_01.removed-field",
+        "trigger": "strong answer with a clear design",
+        "question": "If removing a field might reduce data you need later, how would you account for that?"
+      }
+    ],
+    "scoringAnchors": {
+      "1": "Proposes a before-and-after comparison or has no clear metric.",
+      "3": "Defines hypothesis, randomization, primary metric, and a reasonable duration.",
+      "5": "Adds guardrails, plans sample size, pre-registers decision criteria, and anticipates side effects of the change."
+    },
+    "source": { "kind": "original", "title": "AI Interviewer workshop seed bank" }
+  },
+  {
+    "id": "product_conflicting_experiment_results_01",
+    "schemaVersion": 1,
+    "roles": ["product"],
+    "seniorities": ["mid", "senior"],
+    "type": "situational",
+    "topic": "experimentation",
+    "tags": ["result-interpretation", "retention", "short-term-versus-long-term", "ship-decision"],
+    "difficulty": 3,
+    "competencyIds": ["product.experimentation", "product.metrics"],
+    "question": "An experiment shows a new homepage increased sign-ups by eight percent, but retention for those users looks lower after two weeks. How would you interpret the results and decide what to ship?",
+    "intent": "Assess interpretation of mixed experiment outcomes, including composition effects and statistical uncertainty.",
+    "expectedSignals": [
+      "considers that the new homepage may attract a different, less engaged mix of users",
+      "compares total retained users rather than retention rate alone",
+      "checks statistical confidence and whether two weeks is enough data",
+      "segments results to see who signed up and who churned",
+      "proposes a decision such as iterating, extending the test, or shipping with monitoring"
+    ],
+    "redFlags": [
+      "ships based on the sign-up increase alone"
+    ],
+    "followupProbes": [
+      {
+        "id": "product_conflicting_experiment_results_01.absolute-numbers",
+        "trigger": "candidate focuses only on the retention rate",
+        "question": "Could the new homepage still produce more retained users overall even with a lower rate?"
+      },
+      {
+        "id": "product_conflicting_experiment_results_01.next-step",
+        "trigger": "candidate analyzes without deciding",
+        "question": "If you had to make a call today, what would you do?"
+      }
+    ],
+    "scoringAnchors": {
+      "1": "Picks the favorable metric and ignores the conflict.",
+      "3": "Identifies a plausible explanation such as user mix, checks confidence, and proposes a sensible next step.",
+      "5": "Separates rate from absolute effect, analyzes segments and statistical uncertainty, and makes a clear decision with a plan to reduce remaining risk."
+    },
+    "source": { "kind": "original", "title": "AI Interviewer workshop seed bank" }
+  },
+  {
+    "id": "product_pricing_without_ab_test_01",
+    "schemaVersion": 1,
+    "roles": ["product"],
+    "seniorities": ["senior"],
+    "type": "situational",
+    "topic": "experimentation",
+    "tags": ["pricing", "quasi-experiments", "network-effects", "causal-inference"],
+    "difficulty": 4,
+    "competencyIds": ["product.experimentation", "shared.tradeoff-reasoning"],
+    "question": "You're considering a pricing change, but you can't run a clean A/B test because customers talk to each other and would notice different prices. How would you still learn whether the change is working?",
+    "intent": "Assess the ability to learn causally when standard randomization is unsuitable, while managing risk.",
+    "expectedSignals": [
+      "explains why a standard user-level test is unsuitable here",
+      "proposes alternatives such as geographic or time-based rollouts, cohort comparisons, or new-customer-only changes",
+      "identifies confounders that could mislead those comparisons",
+      "uses qualitative research or surveys to complement quantitative data",
+      "defines leading indicators and a rollback plan"
+    ],
+    "redFlags": [
+      "runs a hidden user-level price test without considering fairness or trust"
+    ],
+    "followupProbes": [
+      {
+        "id": "product_pricing_without_ab_test_01.confounders",
+        "trigger": "candidate proposes a regional or time-based rollout",
+        "question": "What else could change between those regions or time periods and mislead you?"
+      },
+      {
+        "id": "product_pricing_without_ab_test_01.reversal",
+        "trigger": "candidate does not plan for a bad outcome",
+        "question": "If early signals look bad, how would you reverse the change without damaging trust?"
+      }
+    ],
+    "scoringAnchors": {
+      "1": "Cannot propose a way to learn beyond launching and hoping, or proposes an unfair hidden test.",
+      "3": "Proposes a reasonable quasi-experimental rollout with metrics to watch.",
+      "5": "Chooses a design suited to the interference, addresses confounders, combines qualitative and quantitative evidence, and manages risk and reversibility."
+    },
+    "source": { "kind": "original", "title": "AI Interviewer workshop seed bank" }
+  },
+  {
+    "id": "product_confusing_feature_discovery_01",
+    "schemaVersion": 1,
+    "roles": ["product"],
+    "seniorities": ["junior", "mid"],
+    "type": "situational",
+    "topic": "discovery",
+    "tags": ["user-research", "problem-definition", "usability", "interviews"],
+    "difficulty": 2,
+    "competencyIds": ["product.discovery"],
+    "question": "Customers keep calling one of your features 'confusing,' but nobody knows exactly why. How would you find out what the real problem is?",
+    "intent": "Assess discovery skills: turning vague feedback into a specific, evidenced problem using appropriate research methods.",
+    "expectedSignals": [
+      "reviews existing evidence such as support tickets, analytics, and session data",
+      "observes users attempting tasks rather than only asking opinions",
+      "asks open, non-leading questions",
+      "identifies where in the flow users struggle and why",
+      "turns findings into a clear problem statement before solutions"
+    ],
+    "redFlags": [
+      "redesigns the feature immediately without investigating"
+    ],
+    "followupProbes": [
+      {
+        "id": "product_confusing_feature_discovery_01.method",
+        "trigger": "candidate relies only on surveys or asking users what they want",
+        "question": "What could you learn by watching someone use the feature that you would not learn by asking them?"
+      },
+      {
+        "id": "product_confusing_feature_discovery_01.problem-statement",
+        "trigger": "strong research plan",
+        "question": "How would you write up what you found so the team agrees on the problem?"
+      }
+    ],
+    "scoringAnchors": {
+      "1": "Jumps to a solution with no investigation.",
+      "3": "Combines existing data with direct user observation to locate the confusion.",
+      "5": "Triangulates multiple evidence sources, uses unbiased observation, pinpoints the cause, and frames a crisp problem statement before solutioning."
+    },
+    "source": { "kind": "original", "title": "AI Interviewer workshop seed bank" }
+  },
+  {
+    "id": "product_new_segment_bet_01",
+    "schemaVersion": 1,
+    "roles": ["product"],
+    "seniorities": ["senior"],
+    "type": "situational",
+    "topic": "strategy",
+    "tags": ["market-expansion", "customer-segments", "business-case", "strategic-risk"],
+    "difficulty": 5,
+    "competencyIds": ["product.strategy", "product.discovery"],
+    "question": "Your company is considering a version of its product for a very different customer segment, such as small businesses instead of large enterprises. How would you decide whether that's worth pursuing?",
+    "intent": "Assess strategic reasoning about market opportunity, fit with company strengths, risks, and staged learning under uncertainty.",
+    "expectedSignals": [
+      "researches the new segment's needs, buying behavior, and willingness to pay",
+      "estimates the opportunity size and the cost to serve",
+      "assesses fit with the company's capabilities, brand, and go-to-market",
+      "identifies risks such as distraction from the core business or cannibalization",
+      "proposes a staged approach with small tests and explicit criteria to continue or stop"
+    ],
+    "redFlags": [
+      "assumes the existing product can be sold unchanged to the new segment"
+    ],
+    "followupProbes": [
+      {
+        "id": "product_new_segment_bet_01.cheapest-test",
+        "trigger": "candidate proposes a large upfront investment",
+        "question": "What is the smallest test that would tell you whether this segment is real?"
+      },
+      {
+        "id": "product_new_segment_bet_01.core-impact",
+        "trigger": "strong market analysis",
+        "question": "How could pursuing this segment hurt the existing enterprise business?"
+      }
+    ],
+    "scoringAnchors": {
+      "1": "Decides based on market size alone or assumes the product transfers without change.",
+      "3": "Researches segment needs, sizes the opportunity, and weighs fit and risk.",
+      "5": "Builds a structured case covering needs, economics, capabilities, and second-order risks, and designs staged bets with clear stop-or-continue criteria."
+    },
+    "source": { "kind": "original", "title": "AI Interviewer workshop seed bank" }
+  },
+  {
+    "id": "behavioral_explain_to_nonexpert_01",
+    "schemaVersion": 1,
+    "roles": ["behavioral"],
+    "seniorities": ["junior", "mid"],
+    "type": "behavioral",
+    "topic": "communication",
+    "tags": ["audience-awareness", "explaining-complexity", "checking-understanding"],
+    "difficulty": 2,
+    "competencyIds": ["behavioral.communication"],
+    "question": "Tell me about a time you had to explain something technical or complicated to someone without your background. How did you make sure they understood?",
+    "intent": "Assess whether the candidate adapts an explanation to the audience's needs and verifies understanding through concrete actions.",
+    "expectedSignals": [
+      "describes a specific situation and who the audience was",
+      "identifies what the audience needed to know or decide",
+      "adapts the explanation, for example with an analogy, example, or visual",
+      "checks understanding by asking questions or observing the outcome",
+      "describes the result of the conversation"
+    ],
+    "redFlags": [
+      "blames the listener for not understanding without describing any adjustment"
+    ],
+    "followupProbes": [
+      {
+        "id": "behavioral_explain_to_nonexpert_01.verify-understanding",
+        "trigger": "candidate does not say how they knew the explanation worked",
+        "question": "How did you know they had actually understood?"
+      },
+      {
+        "id": "behavioral_explain_to_nonexpert_01.adjustment",
+        "trigger": "candidate describes the explanation but not any adaptation",
+        "question": "Was there a moment where you had to change your approach mid-explanation?"
+      }
+    ],
+    "scoringAnchors": {
+      "1": "Gives no specific example or describes an explanation with no consideration of the audience.",
+      "3": "Describes a concrete example, adapts to the audience, and gives some check of understanding.",
+      "5": "Frames the explanation around the audience's decision or goal, adjusts based on feedback, verifies understanding, and reports the outcome."
+    },
+    "source": { "kind": "original", "title": "AI Interviewer workshop seed bank" }
+  },
+  {
+    "id": "behavioral_deliver_unwelcome_news_01",
+    "schemaVersion": 1,
+    "roles": ["behavioral"],
+    "seniorities": ["mid", "senior"],
+    "type": "behavioral",
+    "topic": "communication",
+    "tags": ["escalation", "risk-communication", "transparency", "timing"],
+    "difficulty": 3,
+    "competencyIds": ["behavioral.communication", "behavioral.ownership"],
+    "question": "Describe a situation where you had to tell a manager or stakeholder something they didn't want to hear, such as a missed deadline or a serious risk. How did you handle it?",
+    "intent": "Assess timeliness, clarity, and constructiveness when communicating bad news upward.",
+    "expectedSignals": [
+      "raised the issue early rather than waiting until it was unavoidable",
+      "stated the problem and its impact clearly",
+      "brought options or a recommendation along with the news",
+      "took responsibility for their part without deflecting",
+      "describes how the stakeholder responded and what happened next"
+    ],
+    "redFlags": [
+      "delayed sharing the news to avoid discomfort without recognizing the cost"
+    ],
+    "followupProbes": [
+      {
+        "id": "behavioral_deliver_unwelcome_news_01.timing",
+        "trigger": "candidate does not say when they raised the issue",
+        "question": "How soon after you knew about the problem did you raise it?"
+      },
+      {
+        "id": "behavioral_deliver_unwelcome_news_01.options",
+        "trigger": "candidate describes only delivering the news",
+        "question": "Did you bring any options or a recommendation into that conversation?"
+      }
+    ],
+    "scoringAnchors": {
+      "1": "No concrete example, or the example shows hiding or delaying the issue without reflection.",
+      "3": "Raised the issue reasonably promptly, explained impact clearly, and owned their role.",
+      "5": "Raised it early, framed impact and options, owned their part, managed the stakeholder's reaction, and reflects on what they would repeat or change."
+    },
+    "source": { "kind": "original", "title": "AI Interviewer workshop seed bank" }
+  },
+  {
+    "id": "behavioral_message_misunderstood_01",
+    "schemaVersion": 1,
+    "roles": ["behavioral"],
+    "seniorities": ["mid", "senior"],
+    "type": "behavioral",
+    "topic": "communication",
+    "tags": ["written-communication", "misalignment", "feedback-loops", "clarity"],
+    "difficulty": 3,
+    "competencyIds": ["behavioral.communication", "behavioral.learning-agility"],
+    "question": "Tell me about a time an important message you sent was misunderstood. How did you discover the misunderstanding, and what did you change afterward?",
+    "intent": "Assess the candidate's ability to detect miscommunication, repair it, and improve their communication practice.",
+    "expectedSignals": [
+      "describes the original message and why it mattered",
+      "explains how the misunderstanding was discovered",
+      "takes concrete steps to correct it and limit the impact",
+      "identifies what about the message or channel caused confusion",
+      "describes a lasting change to how they communicate"
+    ],
+    "redFlags": [
+      "attributes the misunderstanding entirely to the readers"
+    ],
+    "followupProbes": [
+      {
+        "id": "behavioral_message_misunderstood_01.root-cause",
+        "trigger": "candidate describes the fix but not why the confusion happened",
+        "question": "Looking back, what made the message easy to misread?"
+      },
+      {
+        "id": "behavioral_message_misunderstood_01.lasting-change",
+        "trigger": "candidate does not mention a change in practice",
+        "question": "Is there anything you now do differently because of that experience?"
+      }
+    ],
+    "scoringAnchors": {
+      "1": "No concrete example, or no recognition of their own role in the miscommunication.",
+      "3": "Describes the misunderstanding, how they fixed it, and a plausible cause.",
+      "5": "Analyzes the cause precisely, repaired it quickly with attention to impact, and adopted a specific lasting practice they can show working."
+    },
+    "source": { "kind": "original", "title": "AI Interviewer workshop seed bank" }
+  },
+  {
+    "id": "behavioral_own_a_mistake_01",
+    "schemaVersion": 1,
+    "roles": ["behavioral"],
+    "seniorities": ["junior", "mid", "senior"],
+    "type": "behavioral",
+    "topic": "ownership",
+    "tags": ["accountability", "mistakes", "remediation", "prevention"],
+    "difficulty": 3,
+    "competencyIds": ["behavioral.ownership", "behavioral.learning-agility"],
+    "question": "Tell me about a mistake you made at work or on a project that had a real impact. What happened, and what did you do afterward?",
+    "intent": "Assess accountability: acknowledging a mistake, limiting impact, and preventing recurrence. Expected depth scales with seniority, from personal fixes to systemic changes.",
+    "expectedSignals": [
+      "describes a real mistake with a clear account of their own role",
+      "acted to limit the impact once the mistake was discovered",
+      "told the people affected in a timely way",
+      "identifies the cause rather than only the symptom",
+      "made a change that reduces the chance of recurrence, such as a check, process, or habit"
+    ],
+    "redFlags": [
+      "chooses an example where the mistake was actually someone else's"
+    ],
+    "followupProbes": [
+      {
+        "id": "behavioral_own_a_mistake_01.own-role",
+        "trigger": "candidate's account focuses on circumstances or other people",
+        "question": "What part of what happened was specifically yours?"
+      },
+      {
+        "id": "behavioral_own_a_mistake_01.prevention",
+        "trigger": "candidate fixed the immediate issue only",
+        "question": "What did you change so the same kind of mistake would be less likely in the future?"
+      }
+    ],
+    "scoringAnchors": {
+      "1": "Avoids naming a real mistake or deflects responsibility.",
+      "3": "Owns a real mistake, limited its impact, and describes what they learned.",
+      "5": "Owns the mistake candidly, acted quickly and transparently, analyzed the root cause, and implemented a prevention that helped others, appropriate to their level."
+    },
+    "source": { "kind": "original", "title": "AI Interviewer workshop seed bank" }
+  },
+  {
+    "id": "behavioral_problem_outside_scope_01",
+    "schemaVersion": 1,
+    "roles": ["behavioral"],
+    "seniorities": ["junior", "mid"],
+    "type": "behavioral",
+    "topic": "ownership",
+    "tags": ["initiative", "proactivity", "beyond-role", "follow-through"],
+    "difficulty": 2,
+    "competencyIds": ["behavioral.ownership"],
+    "question": "Tell me about a time you noticed a problem that wasn't officially your responsibility. What did you do about it?",
+    "intent": "Assess initiative and judgment about when and how to act on problems outside one's formal scope.",
+    "expectedSignals": [
+      "describes a specific problem and why it mattered",
+      "decided deliberately whether to fix it, raise it, or involve the owner",
+      "took concrete action rather than only noticing",
+      "followed through until the problem was resolved or properly handed off",
+      "respected the responsibilities of the actual owner"
+    ],
+    "redFlags": [
+      "took over another person's work without informing them"
+    ],
+    "followupProbes": [
+      {
+        "id": "behavioral_problem_outside_scope_01.owner",
+        "trigger": "candidate fixed it alone",
+        "question": "Did you involve the person or team who normally owned that area? Why or why not?"
+      },
+      {
+        "id": "behavioral_problem_outside_scope_01.outcome",
+        "trigger": "candidate does not describe the result",
+        "question": "What happened in the end?"
+      }
+    ],
+    "scoringAnchors": {
+      "1": "No specific example, or noticed the problem without taking any action.",
+      "3": "Took concrete action on a real problem and followed through to an outcome.",
+      "5": "Judged the right way to act, coordinated with owners, followed through, and describes the impact and any systemic fix."
+    },
+    "source": { "kind": "original", "title": "AI Interviewer workshop seed bank" }
+  },
+  {
+    "id": "behavioral_structure_ambiguous_project_01",
+    "schemaVersion": 1,
+    "roles": ["behavioral"],
+    "seniorities": ["mid", "senior"],
+    "type": "behavioral",
+    "topic": "ownership",
+    "tags": ["ambiguity", "project-leadership", "scoping", "milestones"],
+    "difficulty": 4,
+    "competencyIds": ["behavioral.ownership", "behavioral.decision-making"],
+    "question": "Describe a project you led where the goal or the path was unclear at the start. How did you bring structure to it and keep it moving?",
+    "intent": "Assess the ability to create clarity in ambiguous work through goal definition, scoping, milestones, and adjustment.",
+    "expectedSignals": [
+      "clarified the goal and success criteria with the relevant people",
+      "broke the work into steps or milestones that reduced uncertainty",
+      "made decisions with incomplete information and stated assumptions",
+      "communicated progress and changes in direction",
+      "adjusted the plan as they learned"
+    ],
+    "redFlags": [
+      "waited for someone else to define the project before acting"
+    ],
+    "followupProbes": [
+      {
+        "id": "behavioral_structure_ambiguous_project_01.first-step",
+        "trigger": "candidate describes the outcome but not how they started",
+        "question": "What was the very first thing you did to make the project less ambiguous?"
+      },
+      {
+        "id": "behavioral_structure_ambiguous_project_01.course-correction",
+        "trigger": "candidate describes a plan that never changed",
+        "question": "Was there a point where you had to change the plan? What told you to?"
+      }
+    ],
+    "scoringAnchors": {
+      "1": "No concrete example or no evidence of personally creating structure.",
+      "3": "Clarified goals, set milestones, and kept stakeholders informed.",
+      "5": "Defined success criteria, sequenced work to reduce the biggest uncertainties first, made explicit assumption-based decisions, and adapted the plan with clear communication."
+    },
+    "source": { "kind": "original", "title": "AI Interviewer workshop seed bank" }
+  },
+  {
+    "id": "behavioral_teammate_disagreement_01",
+    "schemaVersion": 1,
+    "roles": ["behavioral"],
+    "seniorities": ["junior", "mid"],
+    "type": "behavioral",
+    "topic": "teamwork-conflict",
+    "tags": ["disagreement", "peer-collaboration", "compromise", "resolution"],
+    "difficulty": 2,
+    "competencyIds": ["behavioral.conflict-resolution", "behavioral.collaboration"],
+    "question": "Tell me about a time you disagreed with a teammate about how to do something. How did you work it out?",
+    "intent": "Assess constructive handling of a peer disagreement: understanding the other view, using evidence, and reaching a workable outcome.",
+    "expectedSignals": [
+      "describes the disagreement and both positions fairly",
+      "sought to understand the teammate's reasoning",
+      "used evidence, criteria, or a small experiment to decide",
+      "reached a resolution and committed to it, even if not their preference",
+      "maintained the working relationship"
+    ],
+    "redFlags": [
+      "describes winning the argument as the only goal"
+    ],
+    "followupProbes": [
+      {
+        "id": "behavioral_teammate_disagreement_01.other-view",
+        "trigger": "candidate describes only their own position",
+        "question": "What was your teammate's strongest reason for their approach?"
+      },
+      {
+        "id": "behavioral_teammate_disagreement_01.not-your-way",
+        "trigger": "candidate's view prevailed",
+        "question": "Have you been in a similar situation where the decision went the other way? How did you handle that?"
+      }
+    ],
+    "scoringAnchors": {
+      "1": "No concrete example, or resolution by avoidance or escalation without attempting to understand.",
+      "3": "Understood the other view, used some shared reasoning, and reached a resolution.",
+      "5": "Represents both views fairly, used evidence or criteria to decide, committed fully to the outcome, and strengthened the relationship."
+    },
+    "source": { "kind": "original", "title": "AI Interviewer workshop seed bank" }
+  },
+  {
+    "id": "behavioral_teammate_not_delivering_01",
+    "schemaVersion": 1,
+    "roles": ["behavioral"],
+    "seniorities": ["mid", "senior"],
+    "type": "behavioral",
+    "topic": "teamwork-conflict",
+    "tags": ["accountability", "difficult-conversations", "shared-work", "support"],
+    "difficulty": 3,
+    "competencyIds": ["behavioral.collaboration", "behavioral.conflict-resolution"],
+    "question": "Describe a time a teammate wasn't delivering their part of shared work and it was affecting you. What did you do?",
+    "intent": "Assess the candidate's approach to addressing a peer's delivery problem directly and supportively before escalating.",
+    "expectedSignals": [
+      "raised the issue directly with the teammate before escalating",
+      "sought to understand obstacles the teammate was facing",
+      "focused on the work and its impact rather than the person's character",
+      "agreed on concrete next steps or offered help",
+      "escalated appropriately if direct efforts did not work"
+    ],
+    "redFlags": [
+      "went straight to a manager without speaking to the teammate",
+      "silently redid the teammate's work without addressing the issue"
+    ],
+    "followupProbes": [
+      {
+        "id": "behavioral_teammate_not_delivering_01.direct-conversation",
+        "trigger": "candidate does not describe talking to the teammate",
+        "question": "What did you say to your teammate directly, if anything?"
+      },
+      {
+        "id": "behavioral_teammate_not_delivering_01.escalation",
+        "trigger": "candidate resolved it directly",
+        "question": "At what point would you have involved a manager?"
+      }
+    ],
+    "scoringAnchors": {
+      "1": "No concrete example, or responded by avoiding, complaining, or escalating without engagement.",
+      "3": "Spoke directly with the teammate about impact, explored obstacles, and agreed on next steps.",
+      "5": "Addressed it early and respectfully, understood root causes, offered concrete support, set clear expectations, and escalated proportionately when needed."
+    },
+    "source": { "kind": "original", "title": "AI Interviewer workshop seed bank" }
+  },
+  {
+    "id": "behavioral_helped_colleague_succeed_01",
+    "schemaVersion": 1,
+    "roles": ["behavioral"],
+    "seniorities": ["junior", "mid", "senior"],
+    "type": "behavioral",
+    "topic": "teamwork-conflict",
+    "tags": ["mentoring", "unblocking-others", "team-success", "knowledge-sharing"],
+    "difficulty": 3,
+    "competencyIds": ["behavioral.collaboration"],
+    "question": "Tell me about a time you helped someone else on your team succeed, even though it wasn't part of your own goals.",
+    "intent": "Assess contribution to team outcomes beyond individual goals. Expected scope grows with seniority, from helping a peer to multiplying a team's capability.",
+    "expectedSignals": [
+      "describes a specific person and what they needed",
+      "explains what they personally did to help",
+      "balanced the help with their own commitments",
+      "helped in a way that built the other person's ability, not only did the work for them",
+      "describes the outcome for the person or team"
+    ],
+    "redFlags": [
+      "the example centers on taking credit for the other person's result"
+    ],
+    "followupProbes": [
+      {
+        "id": "behavioral_helped_colleague_succeed_01.own-commitments",
+        "trigger": "candidate does not mention their own work",
+        "question": "How did you balance that with your own deadlines?"
+      },
+      {
+        "id": "behavioral_helped_colleague_succeed_01.lasting-impact",
+        "trigger": "strong example of direct help",
+        "question": "Did anything you did keep helping the team after that situation?"
+      }
+    ],
+    "scoringAnchors": {
+      "1": "No concrete example or vague help without personal action.",
+      "3": "Describes a specific, personally taken action that helped a colleague and its outcome.",
+      "5": "Identified the need proactively, built the colleague's capability, balanced commitments, and created lasting benefit for the team at a scope suited to their level."
+    },
+    "source": { "kind": "original", "title": "AI Interviewer workshop seed bank" }
+  },
+  {
+    "id": "behavioral_cross_team_priority_conflict_01",
+    "schemaVersion": 1,
+    "roles": ["behavioral"],
+    "seniorities": ["senior"],
+    "type": "behavioral",
+    "topic": "teamwork-conflict",
+    "tags": ["cross-team-dependencies", "competing-priorities", "negotiation", "escalation-paths"],
+    "difficulty": 4,
+    "competencyIds": ["behavioral.conflict-resolution", "behavioral.collaboration"],
+    "question": "Tell me about a time two teams you worked with had conflicting priorities that blocked progress. What role did you play in resolving it?",
+    "intent": "Assess the ability to resolve organizational conflicts by understanding incentives, finding shared goals, and using escalation constructively.",
+    "expectedSignals": [
+      "explains why each team's priorities made sense from their perspective",
+      "identifies a shared goal or higher-level priority",
+      "proposes options that addressed both teams' constraints",
+      "used escalation deliberately with a clear framing when needed",
+      "describes the outcome and any change that prevented repeat conflicts"
+    ],
+    "redFlags": [
+      "portrays the other team as simply unreasonable"
+    ],
+    "followupProbes": [
+      {
+        "id": "behavioral_cross_team_priority_conflict_01.other-incentives",
+        "trigger": "candidate does not explain the other team's position",
+        "question": "Why did the other team's priority make sense to them?"
+      },
+      {
+        "id": "behavioral_cross_team_priority_conflict_01.escalation-framing",
+        "trigger": "candidate escalated",
+        "question": "How did you frame the escalation so it led to a decision instead of more conflict?"
+      }
+    ],
+    "scoringAnchors": {
+      "1": "No concrete example, or a passive role with no contribution to resolution.",
+      "3": "Understood both teams' constraints and helped reach a workable resolution.",
+      "5": "Diagnosed incentives on both sides, framed a shared goal, crafted options, escalated constructively when needed, and fixed the process that caused the conflict."
+    },
+    "source": { "kind": "original", "title": "AI Interviewer workshop seed bank" }
+  },
+  {
+    "id": "behavioral_learn_quickly_01",
+    "schemaVersion": 1,
+    "roles": ["behavioral"],
+    "seniorities": ["junior", "mid"],
+    "type": "behavioral",
+    "topic": "learning-adaptability",
+    "tags": ["rapid-learning", "new-technology", "learning-strategy", "applying-knowledge"],
+    "difficulty": 2,
+    "competencyIds": ["behavioral.learning-agility"],
+    "question": "Tell me about a time you had to learn a new tool, technology, or subject quickly to get something done. How did you approach it?",
+    "intent": "Assess the candidate's learning strategy and ability to apply new knowledge under time pressure.",
+    "expectedSignals": [
+      "describes what needed to be learned and the deadline or pressure",
+      "chose a deliberate learning approach such as focusing on the essentials first",
+      "used resources such as documentation, experts, or small experiments",
+      "applied the learning to produce a concrete result",
+      "reflects on what worked or what they would do differently"
+    ],
+    "redFlags": [
+      "describes learning in general terms without a specific case"
+    ],
+    "followupProbes": [
+      {
+        "id": "behavioral_learn_quickly_01.what-to-skip",
+        "trigger": "candidate describes learning everything thoroughly",
+        "question": "With limited time, how did you decide what you did not need to learn yet?"
+      },
+      {
+        "id": "behavioral_learn_quickly_01.validation",
+        "trigger": "candidate does not mention checking their understanding",
+        "question": "How did you check that what you learned was correct before relying on it?"
+      }
+    ],
+    "scoringAnchors": {
+      "1": "No concrete example or no description of how they learned.",
+      "3": "Describes a specific learning situation, a reasonable approach, and a concrete result.",
+      "5": "Prioritized the essentials deliberately, combined resources efficiently, validated their understanding, delivered a result, and reflects on improving the approach."
+    },
+    "source": { "kind": "original", "title": "AI Interviewer workshop seed bank" }
+  },
+  {
+    "id": "behavioral_priorities_changed_midstream_01",
+    "schemaVersion": 1,
+    "roles": ["behavioral"],
+    "seniorities": ["mid", "senior"],
+    "type": "behavioral",
+    "topic": "learning-adaptability",
+    "tags": ["changing-requirements", "replanning", "resilience", "stakeholder-updates"],
+    "difficulty": 3,
+    "competencyIds": ["behavioral.adaptability"],
+    "question": "Describe a time when priorities or requirements changed suddenly in the middle of your work. How did you adjust?",
+    "intent": "Assess the ability to replan effectively when circumstances change, preserving value and communicating impact.",
+    "expectedSignals": [
+      "sought to understand why the change happened",
+      "reassessed the plan and what existing work could be reused or set aside",
+      "communicated the impact on timelines or other commitments",
+      "kept themselves or the team focused after the change",
+      "describes the outcome"
+    ],
+    "redFlags": [
+      "describes only frustration with no constructive adjustment"
+    ],
+    "followupProbes": [
+      {
+        "id": "behavioral_priorities_changed_midstream_01.salvage",
+        "trigger": "candidate does not mention the work already done",
+        "question": "What happened to the work you had already completed?"
+      },
+      {
+        "id": "behavioral_priorities_changed_midstream_01.impact-communication",
+        "trigger": "candidate does not mention telling anyone about the impact",
+        "question": "Who needed to know about the effects of the change, and how did you tell them?"
+      }
+    ],
+    "scoringAnchors": {
+      "1": "No concrete example or no constructive response to the change.",
+      "3": "Understood the change, replanned sensibly, and communicated impact.",
+      "5": "Understood the reasoning, preserved reusable work, replanned with clear tradeoffs, communicated proactively, and kept momentum."
+    },
+    "source": { "kind": "original", "title": "AI Interviewer workshop seed bank" }
+  },
+  {
+    "id": "behavioral_decision_with_missing_information_01",
+    "schemaVersion": 1,
+    "roles": ["behavioral"],
+    "seniorities": ["junior", "mid", "senior"],
+    "type": "behavioral",
+    "topic": "decision-quality",
+    "tags": ["uncertainty", "judgment", "reversibility", "assumptions"],
+    "difficulty": 3,
+    "competencyIds": ["behavioral.decision-making"],
+    "question": "Tell me about a decision you had to make without all the information you wanted. How did you make it, and how did it turn out?",
+    "intent": "Assess reasoning under uncertainty: gathering what is feasible, weighing reversibility and risk, and learning from the outcome. Expected stakes and scope scale with seniority.",
+    "expectedSignals": [
+      "explains what information was missing and why waiting was costly",
+      "gathered the most important information available within the time",
+      "considered the risk and reversibility of the options",
+      "made the decision and stated its assumptions",
+      "evaluated the outcome and what it taught them"
+    ],
+    "redFlags": [
+      "judges the decision only by its outcome without examining the reasoning"
+    ],
+    "followupProbes": [
+      {
+        "id": "behavioral_decision_with_missing_information_01.reversibility",
+        "trigger": "candidate does not mention risk or reversibility",
+        "question": "How easy would it have been to undo that decision if it turned out wrong?"
+      },
+      {
+        "id": "behavioral_decision_with_missing_information_01.reasoning-vs-outcome",
+        "trigger": "candidate describes a good outcome",
+        "question": "If the outcome had been bad, would you still think it was the right decision?"
+      }
+    ],
+    "scoringAnchors": {
+      "1": "No concrete example, or no reasoning beyond intuition or deferring to others.",
+      "3": "Explains what was missing, how they gathered key information, and how they decided.",
+      "5": "Weighs the cost of delay, reversibility, and risk explicitly, states assumptions, separates decision quality from outcome, and applies lessons, at a scope suited to their level."
+    },
+    "source": { "kind": "original", "title": "AI Interviewer workshop seed bank" }
+  },
+  {
+    "id": "behavioral_reversed_own_decision_01",
+    "schemaVersion": 1,
+    "roles": ["behavioral"],
+    "seniorities": ["mid", "senior"],
+    "type": "behavioral",
+    "topic": "decision-quality",
+    "tags": ["changing-course", "evidence-based-decisions", "intellectual-honesty", "sunk-cost"],
+    "difficulty": 4,
+    "competencyIds": ["behavioral.decision-making", "behavioral.learning-agility"],
+    "question": "Tell me about a time you changed your mind about an important decision after new evidence came in, possibly after you had already argued for it. What happened?",
+    "intent": "Assess willingness and skill in revising a committed position based on evidence and managing the consequences.",
+    "expectedSignals": [
+      "describes the original decision and their reasons for it",
+      "explains what new evidence emerged and how they evaluated it",
+      "changed course despite prior commitment or sunk cost",
+      "communicated the change and its reasons to those affected",
+      "describes the outcome and any change to how they make decisions"
+    ],
+    "redFlags": [
+      "the change of mind was driven only by pressure rather than evidence"
+    ],
+    "followupProbes": [
+      {
+        "id": "behavioral_reversed_own_decision_01.evidence-evaluation",
+        "trigger": "candidate does not explain why the new evidence was convincing",
+        "question": "How did you decide the new evidence was strong enough to change course?"
+      },
+      {
+        "id": "behavioral_reversed_own_decision_01.communication",
+        "trigger": "candidate does not mention telling others",
+        "question": "How did you explain the change to the people who had supported your original position?"
+      }
+    ],
+    "scoringAnchors": {
+      "1": "No concrete example or no genuine change of position.",
+      "3": "Describes revising a decision based on evidence and communicating the change.",
+      "5": "Evaluated the new evidence rigorously, overcame sunk-cost pressure, communicated transparently, managed consequences, and improved their decision process."
+    },
+    "source": { "kind": "original", "title": "AI Interviewer workshop seed bank" }
+  }
+]

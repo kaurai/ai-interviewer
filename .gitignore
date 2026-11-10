@@ -218,3 +218,23 @@ __marimo__/
 
 # Streamlit
 .streamlit/secrets.toml
+
+# Node / TypeScript
+node_modules/
+*.tsbuildinfo
+coverage/
+
+# Local interview data (may contain user transcripts) and generated caches
+data/sessions/
+data/embeddings/
+
+# Secrets: only the placeholder template is tracked
+.env.*
+!.env.example
+
+# Local speech models and binaries (installed manually; never committed)
+models/
+ggml-*.bin
+*.gguf
+vendor/
+whisper.cpp/

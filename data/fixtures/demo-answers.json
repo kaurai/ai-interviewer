@@ -1,0 +1,8 @@
+[
+  "I would first clarify the traffic shape, latency target, and correctness constraints. I would choose a simple design, define the data model and API, then test it under realistic load. For example, I used Redis with explicit expiration and metrics on hit rate. The tradeoff is operational complexity, so I would start small and add it only after measuring the bottleneck.",
+  "For the missing detail, I would make the failure path explicit: use bounded retries with jitter, idempotency keys, and a dead-letter path. I would monitor latency, errors, saturation, and a business success metric, then rehearse rollback before release.",
+  "I would separate the request path from asynchronous work and make ownership boundaries clear. The data contract would be versioned, writes would be idempotent, and consumers would tolerate duplicates. I would compare a queue with a direct call based on latency and consistency needs, and validate the choice with load tests and tracing.",
+  "I would also document the consistency guarantee and test concurrent updates, partial failures, replay, and recovery. Success would mean the service stays within its latency SLO while producing no duplicate side effects during injected retries.",
+  "In one incident, a release increased database latency. I coordinated a rollback, used traces and query metrics to isolate an unindexed query, and communicated status every fifteen minutes. After recovery we added a query-plan check and a deployment alert. The result was faster detection and no recurrence in the following releases.",
+  "My specific contribution was leading diagnosis and writing the guardrail. I would improve the response by assigning an incident communicator earlier and stating the rollback threshold before deployment."
+]

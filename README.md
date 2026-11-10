@@ -164,21 +164,22 @@ transcribe real speech, configure ElevenLabs or whisper.cpp as described in
 
 ```mermaid
 flowchart TD
-    A[👤 Candidate setup] --> B{Resume?}
-    B -- optional --> C[Bounded professional signals]
-    B -- skip --> D
-    C --> D[Deterministic planner]
-    D --> E[Lexical question retrieval]
-    E --> F[📋 Interview plan]
-    F --> G[❓ Question]
-    G --> H[✍️ Committed answer]
-    H --> I{Follow-up?}
-    I -- at most one --> G2[🔁 Targeted follow-up] --> J
-    I -- no --> J[Next question]
+    A["Candidate setup"] --> B{"Resume?"}
+    B -->|optional| C["Bounded professional signals"]
+    B -->|skip| D["Deterministic planner"]
+    C --> D
+    D --> E["Lexical question retrieval"]
+    E --> F["Interview plan"]
+    F --> G["Question"]
+    G --> H["Committed answer"]
+    H --> I{"Follow-up?"}
+    I -->|at most one| G2["Targeted follow-up"]
+    G2 --> J["Next question"]
+    I -->|no| J
     J -->|more questions| G
-    J -->|done| K[🔎 Evidence extraction]
-    K --> L[⚖️ Conservative dimension scoring]
-    L --> M[🧾 Markdown + JSON reports]
+    J -->|done| K["Evidence extraction"]
+    K --> L["Conservative dimension scoring"]
+    L --> M["Markdown and JSON reports"]
 ```
 
 - Resume parsing supports text, Markdown, PDF, and DOCX. Raw resume text,

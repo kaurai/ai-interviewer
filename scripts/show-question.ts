@@ -1,7 +1,7 @@
 /**
  * Developer-only inspection of one record, including PRIVATE criteria.
  *
- *   npm run questions:show -- backend_rate_limiter_01
+ *   npm run questions:show -- ai_eval_llm_judge_validity_01
  *
  * Expected signals, red flags, probe triggers, and anchors are server-side
  * assessment material. Never send this output to the interview UI.

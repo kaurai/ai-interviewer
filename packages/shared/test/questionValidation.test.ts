@@ -31,19 +31,30 @@ describe('committed seed corpus', () => {
   });
 
   it('has the required size and primary-role distribution', () => {
-    expect(result.stats.total).toBe(60);
-    expect(result.stats.byPrimaryRole).toEqual({ backend: 18, frontend: 14, product: 14, behavioral: 14 });
+    expect(result.stats.total).toBe(100);
+    expect(result.stats.byPrimaryRole).toEqual({
+      'ai-fundamentals': 25,
+      'ai-engineering': 27,
+      'ai-evaluation': 25,
+      'ai-problem-solving': 23,
+    });
   });
 
   it('offers every seniority within every primary role', () => {
     for (const perSeniority of Object.values(result.stats.byPrimaryRoleAndSeniority)) {
-      for (const count of Object.values(perSeniority)) expect(count).toBeGreaterThanOrEqual(4);
+      for (const count of Object.values(perSeniority)) expect(count).toBeGreaterThanOrEqual(6);
     }
   });
 
   it('records truthful original provenance with no invented external metadata', () => {
     for (const q of result.questions) {
-      expect(q.source).toEqual({ kind: 'original', title: 'AI Interviewer workshop seed bank' });
+      expect(q.source).toEqual({ kind: 'original', title: 'AI Interviewer AI-skills seed bank' });
+    }
+  });
+
+  it('assesses AI skills only: every competency uses the ai or shared namespace', () => {
+    for (const q of result.questions) {
+      for (const id of q.competencyIds) expect(id).toMatch(/^(ai|shared)\./);
     }
   });
 });
@@ -81,8 +92,18 @@ describe('schema rejections', () => {
   });
 
   it('rejects an unknown competency ID', () => {
-    const issue = schemaIssue({ ...makeQuestion({ id: 'bad_competency' }), competencyIds: ['backend.vibes'] });
+    const issue = schemaIssue({ ...makeQuestion({ id: 'bad_competency' }), competencyIds: ['ai.vibes'] });
     expect(issue?.message).toContain('competencyIds.0');
+  });
+
+  it('rejects a non-AI competency ID from the retired backend ontology', () => {
+    const issue = schemaIssue({ ...makeQuestion({ id: 'non_ai_competency' }), competencyIds: ['backend.caching'] });
+    expect(issue?.message).toContain('competencyIds.0');
+  });
+
+  it('rejects a retired non-AI role', () => {
+    const issue = schemaIssue({ ...makeQuestion({ id: 'retired_role' }), roles: ['backend'] });
+    expect(issue?.message).toContain('roles.0');
   });
 
   it('rejects a schemaVersion other than 1', () => {
@@ -154,7 +175,7 @@ describe('quality and corpus rules', () => {
       makeQuestion({
         id: 'dupes',
         tags: ['cache', 'cache'],
-        competencyIds: ['backend.caching', 'backend.caching'],
+        competencyIds: ['ai.serving-performance', 'ai.serving-performance'],
         expectedSignals: ['Names a TTL.', 'names a ttl'],
       }),
     ]);
@@ -166,14 +187,14 @@ describe('quality and corpus rules', () => {
     expect(issueFor(result.issues, 'difficulty-seniority')?.message).toContain('junior');
   });
 
-  it('rejects placeholder text but allows the frontend term "placeholder text"', () => {
+  it('rejects placeholder text but allows the ordinary word "placeholder"', () => {
     // The fixture derives `question` from the ID, so the ID must not itself contain a placeholder token.
     const flagged = validateQuestionBank([makeQuestion({ id: 'leftover_intent', intent: 'TODO write intent' })]);
     const placeholderIssues = flagged.issues.filter((i) => i.rule === 'placeholder');
     expect(placeholderIssues).toHaveLength(1);
     expect(placeholderIssues[0]?.message).toContain('intent');
     const allowed = validateQuestionBank([
-      makeQuestion({ id: 'form_labels', redFlags: ['uses placeholder text as the only label'] }),
+      makeQuestion({ id: 'prompt_template', redFlags: ['leaves a placeholder value in the prompt template'] }),
     ]);
     expect(allowed.issues).toEqual([]);
   });
@@ -202,6 +223,18 @@ describe('quality and corpus rules', () => {
     expect(validateQuestionBank(small).ok).toBe(true);
     const seeded = validateQuestionBank(small, { seedCorpus: true });
     expect(rules(seeded.issues)).toEqual(expect.arrayContaining(['corpus-size', 'role-distribution', 'seniority-coverage']));
+  });
+
+  it('reports a wrong AI track distribution even at the right corpus size', () => {
+    const allEngineering = Array.from({ length: 100 }, (_, i) =>
+      makeQuestion({ id: `engineering_only_${i}`, seniorities: ['junior', 'mid', 'senior'] }));
+    const result = validateQuestionBank(allEngineering, { seedCorpus: true });
+    const distribution = result.issues.filter((i) => i.rule === 'role-distribution').map((i) => i.message);
+    expect(rules(result.issues)).not.toContain('corpus-size');
+    expect(distribution).toEqual(expect.arrayContaining([
+      'primary role ai-fundamentals must have 25 records; found 0',
+      'primary role ai-engineering must have 27 records; found 100',
+    ]));
   });
 
   it('reports JSON parse failures and non-array input', () => {

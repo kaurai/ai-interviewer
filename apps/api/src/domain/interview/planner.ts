@@ -55,16 +55,20 @@ interface StageSpec {
   questionTypes: QuestionType[];
 }
 
-/** Role-specific questions first, a behavioral/scenario question last when the budget allows. */
+/** Shared track for the closing applied-AI scenario or behavioral question. */
+const CLOSING_ROLE: Role = 'ai-problem-solving';
+
+/** Track-specific questions first, an applied AI scenario or behavioral question last when the budget allows. */
 export function stageTemplate(role: Role, count: number): StageSpec[] {
-  const roleTypes: QuestionType[] = role === 'behavioral' ? ['behavioral'] : ['technical', 'system-design', 'situational'];
-  const behavioralTypes: QuestionType[] = role === 'behavioral' ? ['behavioral'] : ['behavioral', 'situational'];
+  const roleTypes: QuestionType[] =
+    role === CLOSING_ROLE ? ['situational', 'behavioral'] : ['technical', 'system-design', 'situational'];
+  const behavioralTypes: QuestionType[] = ['behavioral', 'situational'];
   const specs: StageSpec[] = [{ id: 'stage-1', label: 'Core role question', role, questionTypes: roleTypes }];
   for (let i = 1; i < count; i += 1) {
     const isLast = i === count - 1;
     specs.push(
       isLast
-        ? { id: `stage-${i + 1}`, label: 'Behavioral or scenario question', role: 'behavioral', questionTypes: behavioralTypes }
+        ? { id: `stage-${i + 1}`, label: 'Applied AI scenario or behavioral question', role: CLOSING_ROLE, questionTypes: behavioralTypes }
         : { id: `stage-${i + 1}`, label: 'Second competency', role, questionTypes: roleTypes },
     );
   }

@@ -11,7 +11,11 @@ const kebabSlug = z
   .string()
   .regex(/^[a-z0-9]+(?:-[a-z0-9]+)*$/, 'must be lowercase kebab-case');
 
-export const RoleSchema = z.enum(['backend', 'frontend', 'product', 'behavioral']);
+/**
+ * The interview assesses AI skills only. Each role is an AI interview track;
+ * `ai-problem-solving` is the shared fallback pool for every track.
+ */
+export const RoleSchema = z.enum(['ai-fundamentals', 'ai-engineering', 'ai-evaluation', 'ai-problem-solving']);
 export type Role = z.infer<typeof RoleSchema>;
 export const ROLES = RoleSchema.options;
 
@@ -44,12 +48,12 @@ export type CandidateProfile = z.infer<typeof CandidateProfileSchema>;
 
 // --- 5.2 Interview question bank -------------------------------------------
 
-/** Question IDs are stable snake_case slugs, e.g. `backend_rate_limiter_01`. */
+/** Question IDs are stable snake_case slugs, e.g. `ai_eval_rag_support_bot_01`. */
 export const QuestionIdSchema = z
   .string()
-  .regex(/^[a-z][a-z0-9]*(?:_[a-z0-9]+)*$/, 'must be a snake_case slug such as backend_rate_limiter_01');
+  .regex(/^[a-z][a-z0-9]*(?:_[a-z0-9]+)*$/, 'must be a snake_case slug such as ai_eval_rag_support_bot_01');
 
-/** Probe IDs are `<questionId>.<kebab-slug>`, e.g. `backend_rate_limiter_01.atomicity`. */
+/** Probe IDs are `<questionId>.<kebab-slug>`, e.g. `ai_eval_rag_support_bot_01.judge-agreement`. */
 export const ProbeIdSchema = z
   .string()
   .regex(

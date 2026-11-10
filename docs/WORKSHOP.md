@@ -16,7 +16,7 @@ checkpoint runs fully offline: no LLM, network, or API key.
 |---|---|
 | Zod schemas and competency taxonomy | `packages/shared/src/schemas.ts`, `packages/shared/src/competencies.ts` |
 | Deterministic validator | `packages/shared/src/questionValidation.ts`, `scripts/validate-questions.ts` |
-| 60 original seed questions | `data/questions/seed-questions.json` |
+| 100 original AI seed questions | `data/questions/seed-questions.json` |
 | Repository (validated, frozen, lookup by ID) | `apps/api/src/data/questionRepository.ts` |
 | Lexical retriever with match factors | `apps/api/src/domain/retriever.ts` |
 | Tests | `packages/shared/test/`, `apps/api/test/` |
@@ -28,28 +28,31 @@ npm install
 npm run validate:questions      # alias: npm run seed:validate
 ```
 
-Expected: `OK: no validation issues.`, with 60 records split 18 backend,
-14 frontend, 14 product, and 14 behavioral. On failure, the command exits 1 and
-prints a line such as
-`[error] missing-anchor backend_foo_01: scoringAnchors must define level 5`.
+Expected: `OK: no validation issues.`, with 100 AI interview records split
+across four tracks: 25 `ai-fundamentals`, 27 `ai-engineering` (building AI
+systems), 25 `ai-evaluation` (evaluating AI models), and 23
+`ai-problem-solving` (applied AI scenarios and behavioral questions about AI
+work). Every track has at least 6 records per seniority. On failure, the
+command exits 1 and prints a line such as
+`[error] missing-anchor ai_eng_foo_01: scoringAnchors must define level 5`.
 
 ### 2. Inspect one record's private signals and probes
 
 ```bash
-npm run questions:show -- backend_rate_limiter_01
+npm run questions:show -- ai_eval_llm_judge_validity_01
 ```
 
 The section labelled PRIVATE holds expected signals, red flags, probe triggers,
 and scoring anchors. These stay on the server. Red flags are prompts for the
 interviewer to investigate, never automatic penalties.
 
-### 3. Run a retrieval query for a role and focus area
+### 3. Run a retrieval query for an AI track and focus area
 
 ```bash
-npm run questions:search -- --role backend --seniority mid --focus caching
-npm run questions:search -- --role frontend --seniority senior \
-  --competency frontend.accessibility --exclude frontend_accessibility_practice_01 --top 5
-npm run questions:search -- --role backend --seniority junior   # triggers behavioral fallback
+npm run questions:search -- --role ai-evaluation --seniority mid --focus llm-as-judge
+npm run questions:search -- --role ai-engineering --seniority senior \
+  --competency ai.reliability-safety --exclude ai_eng_prompt_injection_01 --top 5
+npm run questions:search -- --role ai-evaluation --seniority junior --top 12   # triggers the ai-problem-solving fallback
 ```
 
 Add `--json` for machine-readable output. That output contains IDs, scores, and
@@ -60,8 +63,8 @@ factors, not the private record.
 Each candidate lists its factors, and the points add up to the score:
 
 - `eligibility`: role and seniority filter (0 points).
-- `fallback`: −2 when the role pool was smaller than top K and behavioral
-  questions were added.
+- `fallback`: −2 when the track's pool was smaller than top K and
+  `ai-problem-solving` questions were added.
 - `focus`: +3 if the focus area equals the topic, +2 if it equals a tag, +1 for
   a partial token match.
 - `competency`: +2.5 for each requested missing competency the record targets.
@@ -80,11 +83,12 @@ one weight and re-running a query.
 ### 5. Add one new original question and make the tests pass
 
 1. Append a record to `data/questions/seed-questions.json`. Use a stable ID
-   like `frontend_offline_form_01`, probe IDs like
-   `frontend_offline_form_01.retry-queue`, anchors `1`, `3`, and `5`, and
-   `"source": { "kind": "original", "title": "AI Interviewer workshop seed bank" }`.
+   like `ai_eng_semantic_cache_01`, probe IDs like
+   `ai_eng_semantic_cache_01.staleness`, competency IDs from the `ai.` or
+   `shared.` namespace, anchors `1`, `3`, and `5`, and
+   `"source": { "kind": "original", "title": "AI Interviewer AI-skills seed bank" }`.
 2. Run `npm run validate:questions`. It now fails with `corpus-size` and
-   `role-distribution` because the seed contract is exactly 60 records. Either
+   `role-distribution` because the seed contract is exactly 100 records. Either
    replace an existing record of the same primary role, or put your question in
    a separate file and validate it with
    `npm run validate:questions -- path/to/file.json --no-seed-rules`.

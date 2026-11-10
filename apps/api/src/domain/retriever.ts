@@ -10,6 +10,7 @@ import {
   normalizeText,
   tokenSet,
   type Difficulty,
+  type Role,
   type Seniority,
 } from '@ai-interviewer/shared';
 import type { QuestionRecord, QuestionRepository } from '../data/questionRepository';
@@ -58,14 +59,17 @@ export const PARAPHRASE_EXCLUSION_THRESHOLD = 0.5;
 
 export const DEFAULT_TOP_K = 8;
 
+/** Shared pool used when a track has too few eligible questions. */
+export const FALLBACK_ROLE: Role = 'ai-problem-solving';
+
 export const RetrievalQuerySchema = z.strictObject({
   role: RoleSchema,
   seniority: SenioritySchema,
-  /** Requested topics, e.g. "caching" or "distributed-systems". */
+  /** Requested topics, e.g. "rag" or "llm-as-judge". */
   focusAreas: z.array(z.string().trim().min(1).max(80)).max(20).default([]),
   /** Planned competencies that still lack evidence. */
   missingCompetencyIds: z.array(CompetencyIdSchema).max(30).default([]),
-  /** Optional stage filter, e.g. only behavioral questions. */
+  /** Optional stage filter, e.g. only situational questions. */
   questionTypes: z.array(QuestionTypeSchema).min(1).optional(),
   /** Already asked question IDs; never returned again. */
   excludeIds: z.array(z.string()).default([]),
@@ -75,7 +79,7 @@ export const RetrievalQuerySchema = z.strictObject({
   /** Untrusted free text (e.g. job description); only tokenized, never executed. */
   queryText: z.string().max(5000).optional(),
   topK: z.number().int().min(1).max(50).default(DEFAULT_TOP_K),
-  /** Use the behavioral fallback pool when fewer primary candidates remain. Defaults to topK. */
+  /** Use the ai-problem-solving fallback pool when fewer primary candidates remain. Defaults to topK. */
   minPoolSize: z.number().int().min(0).max(200).optional(),
 });
 export type RetrievalQueryInput = z.input<typeof RetrievalQuerySchema>;
@@ -150,7 +154,7 @@ function scoreCandidate(
   const eligibility =
     pool === 'primary'
       ? `role ${query.role} and seniority ${query.seniority} match`
-      : `fallback: behavioral question for seniority ${query.seniority}`;
+      : `fallback: ${FALLBACK_ROLE} question for seniority ${query.seniority}`;
   factors.push({ kind: 'eligibility', points: 0, detail: eligibility });
   if (pool === 'fallback') {
     factors.push({
@@ -276,12 +280,12 @@ export function retrieveCandidates(repository: QuestionRepository, input: Retrie
     .filter((q) => q.seniorities.includes(query.seniority) && typeAllowed(q));
   const primary = eligibleForSeniority.filter((q) => q.roles.includes(query.role)).filter(isAvailable);
 
-  // Deliberate fallback: when the role pool is too small, add behavioral
-  // questions for the same seniority. Behavioral sessions have no fallback.
+  // Deliberate fallback: when the track pool is too small, add applied
+  // problem-solving questions for the same seniority. That track has no fallback.
   let fallback: QuestionRecord[] = [];
-  if (primary.length < minPoolSize && query.role !== 'behavioral') {
+  if (primary.length < minPoolSize && query.role !== FALLBACK_ROLE) {
     fallback = eligibleForSeniority
-      .filter((q) => !q.roles.includes(query.role) && q.roles.includes('behavioral'))
+      .filter((q) => !q.roles.includes(query.role) && q.roles.includes(FALLBACK_ROLE))
       .filter(isAvailable);
   }
 

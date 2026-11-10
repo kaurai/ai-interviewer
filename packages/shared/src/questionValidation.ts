@@ -8,6 +8,7 @@ import {
   type ScoringAnchorLevel,
   type Seniority,
 } from './schemas';
+import { COMPETENCY_NAMESPACES } from './competencies';
 import { countWords, normalizeText, tokenSet, jaccard } from './text';
 
 /** Voice-friendly cap on the spoken question (CONTEXT.md 5.2). */
@@ -35,22 +36,26 @@ export const DIFFICULTY_RANGE_BY_SENIORITY: Readonly<Record<Seniority, readonly 
  */
 export const NEAR_DUPLICATE_THRESHOLD = 0.6;
 
-/** Size and distribution contract for the initial seed corpus (CONTEXT.md 7.1). */
+/**
+ * Size and distribution contract for the AI seed corpus. Overrides the
+ * non-AI distribution in CONTEXT.md 7.1 (see the build-question-bank skill).
+ */
 export const SEED_CORPUS_RULES: {
   readonly total: number;
   readonly byPrimaryRole: Readonly<Record<Role, number>>;
   /** Each primary role must offer at least this many records per seniority. */
   readonly minPerSeniorityPerRole: number;
 } = {
-  total: 60,
-  byPrimaryRole: { backend: 18, frontend: 14, product: 14, behavioral: 14 },
-  minPerSeniorityPerRole: 4,
+  total: 100,
+  byPrimaryRole: { 'ai-fundamentals': 25, 'ai-engineering': 27, 'ai-evaluation': 25, 'ai-problem-solving': 23 },
+  minPerSeniorityPerRole: 6,
 };
 
 /**
  * Authoring leftovers. The bare word "placeholder" is deliberately not matched
- * because it is legitimate frontend vocabulary (e.g. input placeholder text);
- * bracketed template markers like "[placeholder]" or "{{name}}" are.
+ * because it can be legitimate vocabulary (e.g. a placeholder value in a
+ * prompt template); bracketed template markers like "[placeholder]" or
+ * "{{name}}" are.
  */
 const PLACEHOLDER_PATTERN =
   /\b(?:todo|tbd|fixme|xxx|lorem ipsum|insert [a-z ]+ here)\b|\?\?\?|\{\{|\}\}|[[<]\s*placeholder\s*[\]>]/i;
@@ -69,7 +74,7 @@ export type ValidationIssue = {
 };
 
 export type ValidationOptions = {
-  /** Enforce the 60-record size, role distribution, and seniority coverage. */
+  /** Enforce the seed-corpus size, AI track distribution, and seniority coverage. */
   seedCorpus?: boolean;
   nearDuplicateThreshold?: number;
 };
@@ -195,6 +200,14 @@ export function validateQuestionBank(input: unknown, options: ValidationOptions 
       const dupes = duplicates(values);
       if (dupes.length > 0) {
         push(rule, q.id, index, `${field} contains duplicates: ${dupes.join(', ')}`);
+      }
+    }
+
+    for (const competencyId of q.competencyIds) {
+      const namespace = competencyId.split('.')[0];
+      if (!(COMPETENCY_NAMESPACES as readonly string[]).includes(namespace ?? '')) {
+        push('competency-namespace', q.id, index,
+          `competency ${competencyId} must use one of the namespaces: ${COMPETENCY_NAMESPACES.join(', ')}`);
       }
     }
 

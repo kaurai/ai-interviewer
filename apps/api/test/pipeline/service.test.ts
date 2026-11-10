@@ -9,7 +9,7 @@ describe('interview service', () => {
     const store = createMemorySessionStore();
     const service = createInterviewService({ repository, store, maxFollowupsPerQuestion: 0, now: () => new Date('2026-01-01T00:00:00.000Z') });
     const created = await service.create({
-      profile: { role: 'backend', seniority: 'mid', focusAreas: [], durationMinutes: 5, mode: 'text' },
+      profile: { role: 'ai-engineering', seniority: 'mid', focusAreas: [], durationMinutes: 5, mode: 'text' },
       resume: null,
       budget: { kind: 'questions', count: 1 },
       providers: { answerMode: 'text', stt: [], tts: 'none', evaluator: 'deterministic' },

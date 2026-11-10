@@ -7,15 +7,15 @@ const root = path.resolve(import.meta.dirname, '../../..');
 
 describe('interview CLI', () => {
   it('parses workshop flags', () => {
-    const options = parseCliArgs(['--role', 'backend', '--seniority', 'mid', '--questions', '3', '--no-save', '--yes']);
-    expect(options).toMatchObject({ role: 'backend', seniority: 'mid', questions: 3, noSave: true, yes: true });
+    const options = parseCliArgs(['--role', 'ai-evaluation', '--seniority', 'mid', '--questions', '3', '--no-save', '--yes']);
+    expect(options).toMatchObject({ role: 'ai-evaluation', seniority: 'mid', questions: 3, noSave: true, yes: true });
   });
 
   it('runs a scripted interview through evaluation without persistence or network calls', async () => {
     const lines: string[] = [];
     const result = await runCli(parseCliArgs([
-      '--resume', path.join(root, 'data/fixtures/synthetic-backend-resume.md'),
-      '--role', 'backend', '--seniority', 'mid', '--mode', 'text', '--questions', '3',
+      '--resume', path.join(root, 'data/fixtures/synthetic-ml-engineer-resume.md'),
+      '--role', 'ai-evaluation', '--seniority', 'mid', '--mode', 'text', '--questions', '3',
       '--answers', path.join(root, 'data/fixtures/demo-answers.json'), '--no-save', '--yes',
     ]), {
       store: createMemorySessionStore(),

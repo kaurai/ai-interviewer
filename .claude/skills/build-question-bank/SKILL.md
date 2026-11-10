@@ -1,6 +1,6 @@
 ---
 name: build-question-bank
-description: Build or revise the AI interviewer's versioned question corpus, validation, offline lexical retrieval, and question-bank tests from CONTEXT.md step 7. Use for the workshop question-bank module; do not use for interview planning, orchestration, or feedback scoring.
+description: Build or revise the AI interviewer's versioned, AI-focused question corpus (AI fundamentals, building AI systems, evaluating AI models, and AI problem solving), plus its validation, offline lexical retrieval, and question-bank tests from CONTEXT.md step 7. Use for the workshop question-bank module; do not use for interview planning, orchestration, or feedback scoring.
 ---
 
 # Build Question Bank
@@ -8,6 +8,13 @@ description: Build or revise the AI interviewer's versioned question corpus, val
 Implement the question bank as an independent, deterministic module that supplies
 question candidates and private assessment criteria to the planner. It must work
 without an LLM, network access, or API credentials.
+
+**The interview is entirely about AI.** Every record assesses a candidate's
+skills in artificial intelligence: fundamental concepts, building AI systems,
+evaluating AI models, and solving applied AI problems. Do not author generic
+backend, frontend, product-management, or general behavioral questions. Even
+behavioral questions must be set in AI work (for example, shipping a model,
+handling an eval regression, or explaining model uncertainty to stakeholders).
 
 ## Execution boundary
 
@@ -29,21 +36,65 @@ Before editing, read these parts of the repository's `CONTEXT.md`:
 - sections 15.1 and 16 for tests and the workshop checkpoint.
 
 Also read [references/question-authoring.md](references/question-authoring.md)
-before authoring or substantially revising records. Treat `CONTEXT.md` as the
-source of truth if the reference and blueprint ever differ.
+before authoring or substantially revising records.
+
+**Precedence.** `CONTEXT.md` remains the source of truth for schemas, paths,
+retrieval, privacy, and tests. This skill and its reference **override** the
+role list and the role distribution in `CONTEXT.md` sections 5.1 and 7.1: the
+bank uses the four AI tracks below instead of backend, frontend, product, and
+behavioral. When you finish, report that `CONTEXT.md` section 7.1 still
+describes the old distribution so the owner can update it; do not silently
+rewrite the blueprint unless asked.
 
 Inspect the repository before acting. Preserve existing work and adapt names and
 module boundaries to the established codebase. If the shared schema package has
 not been created yet, add only the smallest schema/types needed by this module;
 do not bootstrap unrelated UI, interview, voice, or evaluation features.
 
+## AI interview tracks
+
+The `Role` enum values are the four AI tracks. Use exactly these IDs:
+
+| Role ID | Track | What it assesses |
+|---|---|---|
+| `ai-fundamentals` | AI fundamentals | Core ML and deep-learning concepts, how LLMs work and fail, and when to prompt, retrieve, or fine-tune |
+| `ai-engineering` | Building AI systems | Data pipelines, RAG and retrieval, agents and tool use, serving, cost and latency, guardrails, and monitoring |
+| `ai-evaluation` | Evaluating AI models | Metric choice, eval-set design, leakage, LLM-as-judge and human eval, online experiments, error analysis, and fairness |
+| `ai-problem-solving` | Applied AI problem solving | Framing whether and how to use AI, debugging underperforming systems, tradeoff scenarios, and ownership and communication in AI projects |
+
+`ai-problem-solving` replaces the old behavioral track as the shared fallback
+pool, because its questions are useful for every AI candidate.
+
+### Migrate an existing non-AI bank
+
+If the repository still uses `backend`, `frontend`, `product`, and `behavioral`,
+migrate them as one coherent change instead of adding a parallel enum:
+
+1. Replace the values in `RoleSchema` (for example
+   `packages/shared/src/schemas.ts`) and every derived constant such as `ROLES`.
+2. Update the seed-corpus rules in the validator (for example
+   `SEED_CORPUS_RULES.byPrimaryRole` in `packages/shared/src/questionValidation.ts`)
+   to the counts below.
+3. Change the retriever's fallback pool from `behavioral` to
+   `ai-problem-solving`.
+4. Update every other reference to the old role values: CLI `--role` parsing,
+   prompts and help text, resume role inference, planner defaults, demo
+   fixtures and scripted answers, the `interview:demo` script in
+   `package.json`, tests, and README or workshop examples. Search the
+   repository for each old value so none is left behind.
+5. Replace `data/questions/seed-questions.json` entirely with the new AI bank.
+   Do not keep the old records alongside it.
+
+Run the full test suite and typecheck after migrating, not only the question-bank
+tests, because role values cross module boundaries.
+
 ## Choose the implementation depth
 
 Use the caller's requested scope. If they simply ask to implement step 7 or the
 question-bank workshop step, deliver the **workshop core**:
 
-1. strict schema and normalized competency taxonomy;
-2. 60-record original seed corpus;
+1. strict schema and normalized AI competency taxonomy;
+2. 100-record original AI seed corpus;
 3. deterministic validation command;
 4. question repository;
 5. metadata plus lexical retrieval with explainable match factors;
@@ -73,18 +124,34 @@ from it. Make object schemas strict where the surrounding codebase does so.
 
 ## Build the corpus
 
-Author exactly 60 original records for the initial bank, classified by primary
-role using `roles[0]`:
+Author exactly 100 original AI records for the seed bank, classified by
+primary role using `roles[0]`:
 
-- 18 backend;
-- 14 frontend;
-- 14 product;
-- 14 behavioral.
+- 25 `ai-fundamentals`;
+- 27 `ai-engineering`;
+- 25 `ai-evaluation`;
+- 23 `ai-problem-solving`.
+
+Each primary role needs at least 6 records for each seniority (`junior`, `mid`,
+`senior`). If the caller asks for a different size, scale the four counts
+proportionally, update `SEED_CORPUS_RULES` and the seed-corpus tests to match,
+and keep the per-seniority minimum achievable. Follow the per-track coverage buckets and competency ontology in the
+authoring reference.
+
+Balance the question types across the bank:
+
+- `ai-fundamentals`: mostly `technical`, with some `situational` questions that
+  apply a concept to a scenario;
+- `ai-engineering`: mostly `system-design`, with some `technical` questions;
+- `ai-evaluation`: a mix of `technical` and `situational`;
+- `ai-problem-solving`: mostly `situational`, with 4–6 `behavioral` questions
+  about past AI work.
 
 Every record must satisfy the schema in `CONTEXT.md` and the authoring reference.
 In particular:
 
-- use stable semantic IDs, not array positions or random values;
+- use stable semantic IDs prefixed by track, such as
+  `ai_eval_rag_support_bot_01`, not array positions or random values;
 - keep the spoken question at or below roughly 80 words;
 - include a clear intent, nonempty expected signals, normalized competency IDs,
   one to three focused follow-up probes, and question-specific scoring anchors;
@@ -96,10 +163,31 @@ In particular:
 - record each original item with `source.kind: "original"` and a stable source
   title. Do not invent a URL, license, retrieval date, or external attribution.
 
-Write genuinely different questions rather than changing a few nouns. Avoid
-trivia, brainteasers, vendor memorization, leading prompts that reveal an ideal
-answer, protected-trait questions, and questions that judge accent, personality,
-or communication style instead of job-relevant evidence.
+### AI question quality rules
+
+- **Test durable understanding.** Ask about principles that will still hold
+  next year: generalization, leakage, retrieval quality, evaluation validity,
+  cost–quality tradeoffs. Avoid questions whose answer depends on a specific
+  model version, leaderboard rank, price, context-window size, or vendor API.
+- **Mix concept and application.** Pair "explain X" questions with "here is a
+  situation; what do you do?" questions. Strong fundamentals questions ask *why*
+  a technique works or fails, not for a textbook definition.
+- **Make scenarios concrete and bounded.** Give enough context (users, data,
+  constraint, symptom) for the candidate to reason, without a long setup.
+- **Reward reasoning, not jargon.** Expected signals and anchors describe the
+  reasoning a strong answer shows, so a candidate who explains an idea in plain
+  words scores the same as one who names it.
+- **Keep evaluation honest.** The evaluator does not verify technical
+  correctness, so anchors should capture observable reasoning: stated
+  assumptions, chosen metrics, failure modes, verification steps, and tradeoffs.
+- **Include responsible AI where it fits naturally,** such as bias in eval data,
+  privacy in training data, prompt injection, or harmful outputs, without
+  turning every question into an ethics question.
+- Write genuinely different questions rather than changing a few nouns. Avoid
+  trivia, math derivations that cannot be answered aloud, brainteasers, vendor
+  memorization, leading prompts that reveal an ideal answer, protected-trait
+  questions, and questions that judge accent, personality, or communication
+  style instead of job-relevant evidence.
 
 Do not browse for or copy question lists for the default original bank. When the
 caller explicitly asks to import licensed material, verify the specific source's
@@ -113,9 +201,11 @@ The validation script must exit nonzero with actionable record IDs and reasons.
 Check at least:
 
 - JSON parsing and Zod validation;
-- exact corpus size and primary-role distribution for the initial seed file;
+- exact corpus size, primary-role distribution (25/27/25/23), and the minimum
+  per seniority for each AI track in the initial seed file;
 - unique question IDs and globally unique probe IDs;
 - allowed enums, `schemaVersion: 1`, nonempty fields, and known competency IDs;
+- every competency ID uses the `ai.` or `shared.` namespace;
 - one to three probes per record and anchors `1`, `3`, and `5`;
 - question word count, duplicate tags, and duplicate competency IDs;
 - exact duplicates after case/punctuation/whitespace normalization;
@@ -134,10 +224,11 @@ early with a useful error instead of leaking malformed questions into a session.
 
 The lexical retriever must:
 
-1. filter by role and seniority, with a deliberate fallback to shared or
-   behavioral questions when the primary pool is too small;
+1. filter by AI track and seniority, with a deliberate fallback to
+   `ai-problem-solving` questions when the primary pool is too small;
 2. exclude asked IDs and known close paraphrases;
-3. weight requested topics and missing competencies;
+3. weight requested topics (for example `rag`, `evaluation`, `transformers`)
+   and missing competencies;
 4. penalize difficulty mismatch;
 5. rank deterministically across question, intent, topic, tags, and expected
    signals;
@@ -160,17 +251,20 @@ mixed models or dimension mismatches. Never auto-download an embedding model.
 
 Add meaningful tests for:
 
-- valid seed data and each important validator failure;
-- role/seniority filtering and behavioral fallback;
+- valid seed data and each important validator failure, including a non-AI
+  competency ID and a wrong track distribution;
+- AI track and seniority filtering, and the `ai-problem-solving` fallback;
 - exclusion of asked and near-duplicate questions;
-- topic, competency, and difficulty ranking;
+- topic, competency, and difficulty ranking (for example, a `rag` focus ranks
+  retrieval questions above transformer-theory questions);
 - deterministic ordering and zero-match behavior;
 - explainable match factors;
 - fixed-vector cosine results and dimension rejection when hybrid mode exists;
 - lexical fallback when the embedding provider is unavailable.
 
-Run the question validator, its focused tests, and the relevant typecheck. Fix
-failures caused by this work. Do not consume external API credits in tests.
+Run the question validator, its focused tests, the full test suite, and the
+relevant typecheck. Fix failures caused by this work. Do not consume external
+API credits in tests.
 
 ## Workshop handoff
 
@@ -179,12 +273,14 @@ relevant section if that documentation already belongs to the current phase. It
 should tell students how to:
 
 1. run the validator;
-2. inspect one record's private signals and probes;
-3. run a retrieval query for a role and focus area;
+2. inspect one AI record's private signals and probes;
+3. run a retrieval query for an AI track and focus area, such as
+   `--role ai-evaluation --focus llm-as-judge`;
 4. observe why the returned candidates ranked as they did;
-5. add one new original question and make the tests pass.
+5. add one new original AI question and make the tests pass.
 
-At completion, report the files changed, corpus counts, validation/test commands,
-and whether semantic mode was included or intentionally deferred. Do not claim
-the questions are unbiased or universally “best”; describe the concrete quality
-checks and coverage delivered.
+At completion, report the files changed, corpus counts per AI track and
+seniority, validation/test commands, any remaining references to the old roles
+(including `CONTEXT.md` section 7.1), and whether semantic mode was included or
+intentionally deferred. Do not claim the questions are unbiased or universally
+“best”; describe the concrete quality checks and coverage delivered.

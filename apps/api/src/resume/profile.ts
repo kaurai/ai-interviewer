@@ -17,7 +17,7 @@ import { ResumeProfileSchema, type ResumeProfile, type ResumeSourceKind, type Ro
 
 type Lexicon = ReadonlyArray<readonly [canonical: string, pattern: RegExp]>;
 
-/** Technologies and engineering/product practices. Canonical names are lowercase. */
+/** Technologies and engineering, AI, and product practices. Canonical names are lowercase. */
 export const SKILL_LEXICON: Lexicon = [
   // languages
   ['typescript', /\btypescript\b/i],
@@ -67,6 +67,32 @@ export const SKILL_LEXICON: Lexicon = [
   ['html', /\bhtml5?\b/i],
   ['web components', /\bweb components?\b/i],
   ['state management', /\bredux\b|\bstate management\b|\bzustand\b|\bmobx\b/i],
+  // AI and machine learning
+  ['machine learning', /\bmachine learning\b|\bml\b/i],
+  ['deep learning', /\bdeep learning\b|\bneural networks?\b/i],
+  ['pytorch', /\bpytorch\b|\btorch\b/i],
+  ['tensorflow', /\btensorflow\b|\bkeras\b/i],
+  ['scikit-learn', /\bscikit-learn\b|\bsklearn\b/i],
+  ['transformers', /\btransformers?\b|\battention mechanisms?\b/i],
+  ['llms', /\bllms?\b|\blarge language models?\b|\bgenerative ai\b|\bgenai\b/i],
+  ['nlp', /\bnlp\b|\bnatural language processing\b/i],
+  ['computer vision', /\bcomputer vision\b/i],
+  ['embeddings', /\bembeddings?\b|\bvector (?:search|databases?|stores?)\b/i],
+  ['rag', /\brag\b|\bretrieval[- ]augmented\b/i],
+  ['prompt engineering', /\bprompt(?:ing| engineering| design)\b/i],
+  ['fine-tuning', /\bfine[- ]?tun(?:e|ed|ing)\b|\blora\b/i],
+  ['agents', /\bai agents?\b|\bagentic\b|\btool[- ]use\b|\bfunction calling\b/i],
+  ['model serving', /\bmodel serving\b|\binference (?:service|server|optimization|latency)\b/i],
+  ['mlops', /\bmlops\b|\bmodel (?:registry|monitoring|deployment)\b|\bfeature stores?\b|\bdrift\b/i],
+  ['guardrails', /\bguardrails?\b|\bprompt injection\b|\bcontent (?:filtering|moderation)\b/i],
+  ['data labeling', /\bdata label(?:ing|ling)\b|\bannotation\b/i],
+  ['model evaluation', /\bmodel evaluation\b|\bevals?\b|\bevaluation (?:harness|framework|sets?|pipelines?)\b|\bbenchmark(?:s|ing)?\b/i],
+  ['llm-as-judge', /\bllm[- ]as[- ](?:a[- ])?judge\b|\bautomated graders?\b/i],
+  ['human evaluation', /\bhuman (?:evaluation|eval|review|raters?)\b|\binter-?rater\b/i],
+  ['error analysis', /\berror analysis\b|\bfailure analysis\b/i],
+  ['statistics', /\bstatistic(?:s|al)\b|\bhypothesis test(?:s|ing)?\b|\bconfidence intervals?\b/i],
+  ['responsible ai', /\bresponsible ai\b|\bfairness\b|\bbias (?:audit|mitigation|testing)\b|\bred[- ]team(?:ing)?\b/i],
+  ['ml research', /\bresearch (?:papers?|publications?)\b|\bpublished\b|\bneurips\b|\bicml\b|\biclr\b|\bacl\b/i],
   // practices
   ['rate limiting', /\brate[- ]limit(?:ing|er|s)?\b|\bthrottling\b/i],
   ['caching', /\bcach(?:e|es|ing)\b|\bcdn\b/i],
@@ -114,7 +140,7 @@ export const DOMAIN_LEXICON: Lexicon = [
 ];
 
 const TITLE_PATTERN =
-  /\b(?:(junior|associate|mid[- ]level|senior|staff|principal|lead)\s+)?(software|backend|back[- ]end|frontend|front[- ]end|full[- ]stack|platform|data|site reliability|web|mobile|infrastructure|devops|qa|test|product|ui|ux|machine learning)\s+(engineer|developer|manager|designer|architect|owner)\b|\b(engineering manager|tech lead|technical lead|product owner|product manager)\b/gi;
+  /\b(?:(junior|associate|mid[- ]level|senior|staff|principal|lead)\s+)?(software|backend|back[- ]end|frontend|front[- ]end|full[- ]stack|platform|data|site reliability|web|mobile|infrastructure|devops|qa|test|product|ui|ux|machine learning|ml|ai|mlops|nlp|computer vision|applied|research)\s+(engineer|developer|manager|designer|architect|owner|scientist|researcher)\b|\b(engineering manager|tech lead|technical lead|product owner|product manager)\b/gi;
 
 /** Only years explicitly described as experience; never ages or dates. */
 const YEARS_PATTERN =
@@ -147,32 +173,37 @@ function normalizeTitle(raw: string): string {
     .trim();
 }
 
-const BACKEND_SKILLS = new Set([
-  'node.js', 'express', 'django', 'spring', 'postgresql', 'mysql', 'mongodb', 'redis', 'kafka', 'rabbitmq', 'grpc', 'rest api',
-  'microservices', 'message queues', 'rate limiting', 'distributed systems', 'concurrency', 'idempotency', 'data modeling',
-  'database migrations', 'observability', 'alerting', 'reliability', 'go', 'java', 'kotlin', 'rust', 'sql',
+/** Resume skills that point toward each AI interview track. */
+const FUNDAMENTALS_SKILLS = new Set([
+  'machine learning', 'deep learning', 'pytorch', 'tensorflow', 'scikit-learn', 'transformers', 'nlp', 'computer vision',
+  'statistics', 'ml research',
 ]);
-const FRONTEND_SKILLS = new Set([
-  'react', 'vue', 'angular', 'next.js', 'css', 'html', 'web components', 'state management', 'accessibility', 'web performance',
-  'design systems',
+const ENGINEERING_SKILLS = new Set([
+  'llms', 'embeddings', 'rag', 'prompt engineering', 'fine-tuning', 'agents', 'model serving', 'mlops', 'guardrails',
+  'data labeling',
 ]);
-const PRODUCT_SKILLS = new Set(['experimentation', 'product metrics', 'prioritization', 'user research', 'stakeholder management']);
+const EVALUATION_SKILLS = new Set([
+  'model evaluation', 'llm-as-judge', 'human evaluation', 'error analysis', 'experimentation', 'responsible ai',
+]);
 
+/**
+ * Suggest an AI interview track from resume titles and skills. Returns null
+ * when the evidence is weak so the candidate chooses their own track.
+ */
 export function inferRole(titles: readonly string[], skills: readonly string[]): Role | null {
   for (const title of titles) {
-    if (/product (?:manager|owner)/.test(title)) return 'product';
-    if (/\b(?:backend|platform|infrastructure|site reliability|devops|data)\b/.test(title)) return 'backend';
-    if (/\b(?:frontend|web|ui)\b/.test(title)) return 'frontend';
+    if (/\b(?:research scientist|researcher|applied scientist)\b/.test(title)) return 'ai-fundamentals';
+    if (/\b(?:machine learning|ml|ai|mlops|nlp|computer vision) (?:engineer|developer|architect)\b/.test(title)) return 'ai-engineering';
   }
   const count = (set: ReadonlySet<string>) => skills.filter((s) => set.has(s)).length;
   const scores: Array<[Role, number]> = [
-    ['backend', count(BACKEND_SKILLS)],
-    ['frontend', count(FRONTEND_SKILLS)],
-    ['product', count(PRODUCT_SKILLS)],
+    ['ai-engineering', count(ENGINEERING_SKILLS)],
+    ['ai-fundamentals', count(FUNDAMENTALS_SKILLS)],
+    ['ai-evaluation', count(EVALUATION_SKILLS)],
   ];
   scores.sort((a, b) => b[1] - a[1]);
   const [best, second] = scores;
-  // Require a clear majority; otherwise leave the role to the candidate.
+  // Require a clear majority; otherwise leave the track to the candidate.
   if (best && best[1] >= 3 && best[1] >= 2 * (second?.[1] ?? 0)) return best[0];
   return null;
 }

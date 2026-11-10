@@ -19,7 +19,7 @@
     "start:api": "node --import tsx apps/api/src/index.ts",
     "doctor": "node --import tsx scripts/doctor.ts",
     "interview": "node --import tsx apps/cli/src/index.ts",
-    "interview:demo": "node --import tsx apps/cli/src/index.ts --resume data/fixtures/synthetic-backend-resume.md --role backend --seniority mid --mode text --questions 3 --answers data/fixtures/demo-answers.json --no-save --yes",
+    "interview:demo": "node --import tsx apps/cli/src/index.ts --resume data/fixtures/synthetic-ml-engineer-resume.md --role ai-evaluation --seniority mid --mode text --questions 3 --answers data/fixtures/demo-answers.json --no-save --yes",
     "typecheck": "tsc -p tsconfig.json && tsc -p apps/web/tsconfig.json",
     "test": "vitest run",
     "test:questions": "vitest run packages/shared/test/questionValidation.test.ts apps/api/test/retriever.test.ts apps/api/test/questionRepository.test.ts",

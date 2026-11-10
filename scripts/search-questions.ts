@@ -1,10 +1,10 @@
 /**
  * Run a lexical retrieval query against the committed bank and explain the ranking.
  *
- *   npm run questions:search -- --role backend --seniority mid --focus caching
- *   npm run questions:search -- --role frontend --seniority senior \
- *     --competency frontend.accessibility --exclude frontend_accessibility_practice_01 --top 5
- *   npm run questions:search -- --role backend --seniority junior --json
+ *   npm run questions:search -- --role ai-evaluation --seniority mid --focus llm-as-judge
+ *   npm run questions:search -- --role ai-engineering --seniority senior \
+ *     --competency ai.reliability-safety --exclude ai_eng_prompt_injection_01 --top 5
+ *   npm run questions:search -- --role ai-fundamentals --seniority junior --json
  *
  * Repeat --focus, --competency, --exclude, and --type as needed.
  */
@@ -28,7 +28,7 @@ const { values } = parseArgs({
 });
 
 if (!values.role || !values.seniority) {
-  console.error('Usage: npm run questions:search -- --role <backend|frontend|product|behavioral> --seniority <junior|mid|senior> [--focus topic] [--competency id] [--exclude id] [--type t] [--text "..."] [--difficulty n] [--top k] [--json]');
+  console.error('Usage: npm run questions:search -- --role <ai-fundamentals|ai-engineering|ai-evaluation|ai-problem-solving> --seniority <junior|mid|senior> [--focus topic] [--competency id] [--exclude id] [--type t] [--text "..."] [--difficulty n] [--top k] [--json]');
   process.exit(1);
 }
 

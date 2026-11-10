@@ -9,13 +9,13 @@ export function makeQuestion(overrides: Partial<InterviewQuestion> & { id: strin
   const base: InterviewQuestion = {
     id,
     schemaVersion: 1,
-    roles: ['backend'],
+    roles: ['ai-engineering'],
     seniorities: ['mid'],
     type: 'technical',
-    topic: 'caching',
+    topic: 'llm-caching',
     tags: ['cache-invalidation'],
     difficulty: 3,
-    competencyIds: ['backend.caching'],
+    competencyIds: ['ai.serving-performance'],
     // Content tokens come only from the ID, so fixtures with distinct IDs are not near-duplicates.
     question: `How would you approach ${id.replace(/_/g, ' ')}?`,
     intent: 'Assess a fixture competency.',

@@ -1,27 +1,97 @@
-# AI Interviewer
+<div align="center">
 
-## Run the code
+<img src="docs/assets/banner.svg" alt="AI Interviewer: local-first practice interviews on AI skills with evidence-grounded feedback" width="100%" />
 
-### Requirements
+<br />
+<br />
 
-- Node.js 22 or newer
-- npm
+<p>
+  <a href="https://github.com/kaurai/ai-interviewer/blob/main/LICENSE"><img alt="License: Apache 2.0" src="https://img.shields.io/badge/license-Apache%202.0-7c9cff?style=for-the-badge" /></a>
+  <img alt="Node.js 22+" src="https://img.shields.io/badge/node-%E2%89%A522-5ee6a8?style=for-the-badge&logo=node.js&logoColor=white" />
+  <img alt="TypeScript" src="https://img.shields.io/badge/TypeScript-strict-3178c6?style=for-the-badge&logo=typescript&logoColor=white" />
+  <img alt="Tested with Vitest" src="https://img.shields.io/badge/tested%20with-vitest-b38cff?style=for-the-badge&logo=vitest&logoColor=white" />
+</p>
+<p>
+  <img alt="Local-first" src="https://img.shields.io/badge/local--first-no%20API%20key%20required-1e1446?style=flat-square" />
+  <img alt="100 validated AI questions" src="https://img.shields.io/badge/AI%20question%20bank-100%20validated-1e1446?style=flat-square" />
+  <img alt="Voice input" src="https://img.shields.io/badge/voice-Scribe%20v2%20%2B%20whisper.cpp-1e1446?style=flat-square" />
+  <a href="https://github.com/kaurai/ai-interviewer/stargazers"><img alt="GitHub stars" src="https://img.shields.io/github/stars/kaurai/ai-interviewer?style=flat-square&color=ff8fc7" /></a>
+</p>
 
-No API key, speech model, or external service is required for the offline demo
-or a text-only interview.
+<h3>Practice AI interviews from your terminal.<br/>Get feedback grounded in what you actually said.</h3>
 
-### 1. Install and run the offline demo
+<p>
+  <a href="#-quick-start"><b>Quick start</b></a> ·
+  <a href="#-features"><b>Features</b></a> ·
+  <a href="#-how-it-works"><b>How it works</b></a> ·
+  <a href="#-cli-reference"><b>CLI</b></a> ·
+  <a href="#%EF%B8%8F-speech-to-text-setup"><b>Voice</b></a> ·
+  <a href="#-http-api"><b>API</b></a> ·
+  <a href="#-troubleshooting"><b>Troubleshooting</b></a>
+</p>
+
+</div>
+
+<br />
+
+> [!NOTE]
+> AI Interviewer is **practice software, not a hiring assessment**. The
+> deterministic evaluator scores only what it can support from the committed
+> transcript and deliberately leaves technical accuracy and other unsupported
+> dimensions unassessed.
+
+## ✨ Features
+
+<table>
+  <tr>
+    <td width="50%" valign="top">
+      <h4>🎯 Four AI interview tracks</h4>
+      Builds a seniority-aware interview on <b>AI fundamentals</b>, <b>building AI systems</b>, <b>evaluating AI models</b>, or <b>applied AI problem solving</b> from a validated 100-question bank.
+    </td>
+    <td width="50%" valign="top">
+      <h4>📄 Resume-aware questions</h4>
+      Reads TXT, Markdown, PDF, or DOCX resumes and extracts bounded professional signals to improve question selection. Those signals never raise a score.
+    </td>
+  </tr>
+  <tr>
+    <td valign="top">
+      <h4>🎙️ Voice or text answers</h4>
+      Type your answers or submit audio files. Transcription uses ElevenLabs Scribe v2 with a fully local whisper.cpp fallback, and you can correct the draft before you commit it.
+    </td>
+    <td valign="top">
+      <h4>🔁 Adaptive follow-ups</h4>
+      Asks at most one targeted follow-up per main question by default, using probes drawn from the question bank.
+    </td>
+  </tr>
+  <tr>
+    <td valign="top">
+      <h4>🧾 Evidence-grounded reports</h4>
+      Produces Markdown and JSON feedback. Every quoted item is validated against a turn in your transcript.
+    </td>
+    <td valign="top">
+      <h4>🔒 Local-first and private</h4>
+      Binds to loopback, never saves raw resumes or audio, keeps keys out of logs, and keeps working in text mode when speech providers are unavailable.
+    </td>
+  </tr>
+</table>
+
+## 🚀 Quick start
+
+**Requirements:** Node.js 22 or newer, plus npm. The offline demo and text-only
+interviews need no API key, speech model, or external service.
 
 ```bash
+git clone https://github.com/kaurai/ai-interviewer.git
+cd ai-interviewer
 npm install
 npm run interview:demo
 ```
 
-This runs a deterministic three-question interview using the sample resume and
-answers in `data/fixtures/`. It does not use the network and does not save a
-session. The generated feedback report is printed in the terminal.
+The demo runs a deterministic three-question interview using the sample resume
+and answers in `data/fixtures/`. It does not use the network or save a session,
+and it prints the feedback report in your terminal.
 
-### 2. Run an interactive interview
+### Run an interactive interview
 
 ```bash
 cp .env.example .env   # optional; the defaults support text mode
@@ -30,21 +100,23 @@ npm run interview
 ```
 
 The CLI asks for an optional resume, target role, seniority, focus areas,
-answer mode, and interview length. For the simplest first run, leave the
-resume blank and choose `text` mode.
+answer mode, and interview length.
 
-You can also supply the setup on the command line:
+> [!TIP]
+> For the simplest first run, leave the resume blank and choose `text` mode.
+
+You can also pass the setup on the command line:
 
 ```bash
 npm run interview -- \
   --resume ./resume.pdf \
-  --role backend \
+  --role ai-engineering \
   --seniority mid \
-  --focus caching,reliability \
+  --focus rag,prompt-injection \
   --questions 3
 ```
 
-Use these commands while an interview is running:
+### In-interview commands
 
 | Command | Effect |
 |---|---|
@@ -60,12 +132,11 @@ Add `--no-save` to keep the entire run in memory:
 npm run interview -- --questions 3 --no-save
 ```
 
-### 3. Run the transcription API
+### Run the transcription API
 
-The API is a separate speech-to-text service. It is not required for text-mode
-CLI interviews.
-
-Start it with the fake provider for a no-credential wiring test:
+The API is a separate speech-to-text service. Text-mode CLI interviews don't
+need it. To test the wiring without credentials, start it with the fake
+provider:
 
 ```bash
 STT_PROVIDER=fake STT_FALLBACK_PROVIDER=none npm run start:api
@@ -77,40 +148,53 @@ The server listens on `http://127.0.0.1:3001` by default. In another terminal:
 curl http://127.0.0.1:3001/api/health
 ```
 
-For development with automatic restart:
-
-```bash
-npm run dev:api
-```
-
-To transcribe real speech, configure ElevenLabs or whisper.cpp as described in
-[Speech-to-text setup](#speech-to-text-setup).
-
-## What this project does
-
-AI Interviewer is a local-first mock interview system for backend, frontend,
-product, and behavioral practice. It can:
-
-- build a role- and seniority-aware interview from a validated 60-question bank;
-- use optional resume signals to improve question selection;
-- accept typed answers or audio-file answers;
-- ask at most one targeted follow-up per main question by default;
-- produce an evidence-grounded Markdown and JSON feedback report; and
-- keep working in text mode when speech providers are unavailable.
-
-This is practice software, not a hiring assessment. The deterministic evaluator
-scores only what it can support from the committed transcript. It deliberately
-leaves technical accuracy and other unsupported dimensions unassessed.
+Use `npm run dev:api` to restart the server automatically as you edit. To
+transcribe real speech, configure ElevenLabs or whisper.cpp as described in
+[Speech-to-text setup](#%EF%B8%8F-speech-to-text-setup).
 
 ### Current interfaces
 
 | Interface | Status | Purpose |
 |---|---|---|
-| Terminal interview | Complete | Runs the end-to-end interview and report pipeline |
-| Local HTTP API | Complete | Health check and audio transcription |
-| Browser voice modules | Library only | Recorder, transcription client, and editable-answer controller; no finished web UI yet |
+| 🖥️ Terminal interview | ✅ Complete | Runs the end-to-end interview and report pipeline |
+| 🌐 Local HTTP API | ✅ Complete | Health check and audio transcription |
+| 🎧 Browser voice modules | 🧩 Library only | Recorder, transcription client, and editable-answer controller; no finished web UI yet |
 
-## CLI reference
+## 🧠 How it works
+
+```mermaid
+flowchart TD
+    A[👤 Candidate setup] --> B{Resume?}
+    B -- optional --> C[Bounded professional signals]
+    B -- skip --> D
+    C --> D[Deterministic planner]
+    D --> E[Lexical question retrieval]
+    E --> F[📋 Interview plan]
+    F --> G[❓ Question]
+    G --> H[✍️ Committed answer]
+    H --> I{Follow-up?}
+    I -- at most one --> G2[🔁 Targeted follow-up] --> J
+    I -- no --> J[Next question]
+    J -->|more questions| G
+    J -->|done| K[🔎 Evidence extraction]
+    K --> L[⚖️ Conservative dimension scoring]
+    L --> M[🧾 Markdown + JSON reports]
+```
+
+- Resume parsing supports text, Markdown, PDF, and DOCX. Raw resume text,
+  filenames, paths, and contact details are never persisted.
+- Resume-derived signals affect question selection only; they never increase a
+  score.
+- The question bank supplies expected signals, follow-up probes, and scoring
+  anchors. Private assessment material is never shown to the candidate.
+- The canonical answer is the text the candidate commits after any transcript
+  correction.
+- Every quoted report item is validated against a candidate transcript turn.
+- The current evaluator is deterministic and offline. It measures observable
+  coverage, relevance, structure, reasoning markers, examples, and similar
+  evidence; it does not claim to verify technical correctness.
+
+## 💻 CLI reference
 
 ```text
 npm run interview -- [options]
@@ -120,7 +204,7 @@ npm run interview -- delete <session-id>
 | Option | Accepted values | Description |
 |---|---|---|
 | `--resume FILE` | `.txt`, `.md`, `.pdf`, `.docx` | Extract bounded professional signals from a resume |
-| `--role ROLE` | `backend`, `frontend`, `product`, `behavioral` | Set the target interview role |
+| `--role ROLE` | `ai-fundamentals`, `ai-engineering`, `ai-evaluation`, `ai-problem-solving` | Set the AI interview track |
 | `--seniority LEVEL` | `junior`, `mid`, `senior` | Set the target level |
 | `--focus a,b` | Comma-separated text | Prioritize topics or skills |
 | `--years N` | `0`–`60` | Set years of experience |
@@ -133,9 +217,13 @@ npm run interview -- delete <session-id>
 | `--yes` | Flag | Skip the consent prompt |
 | `--help` | Flag | Print CLI help |
 
-`--questions` and `--duration` are mutually exclusive.
+> [!IMPORTANT]
+> `--questions` and `--duration` are mutually exclusive.
 
-### Voice-file answers
+<details>
+<summary><b>🎙️ Voice-file answers</b></summary>
+
+<br />
 
 Start an interview in voice mode:
 
@@ -152,13 +240,18 @@ At an answer prompt, enter an audio file instead of text:
 
 WAV duration is read from the file header. WebM, MP4/M4A, and Ogg files need a
 duration in seconds. After transcription, the CLI shows a draft and lets you
-correct it before committing the answer. Typing an answer remains available in
-voice mode.
+correct it before committing the answer. You can still type answers in voice
+mode.
 
 Supported audio extensions are `.wav`, `.webm`, `.mp4`, `.m4a`, and `.ogg`.
 The default limits are 10 MB and 60 seconds.
 
-### Saved output
+</details>
+
+<details>
+<summary><b>💾 Saved output</b></summary>
+
+<br />
 
 A saved interview creates three files:
 
@@ -178,7 +271,9 @@ npm run interview -- delete iv_0123456789abcdef01234567
 Session IDs are printed when an interview starts. `data/sessions/` is ignored
 by Git because transcripts may contain personal information.
 
-## Configuration
+</details>
+
+## ⚙️ Configuration
 
 The application loads `.env` from the repository root when the file exists.
 Copy the documented template before changing any defaults:
@@ -192,7 +287,10 @@ npm run doctor
 resume parsers, text-to-speech readiness, speech-to-text provider readiness,
 and local tool paths. It never prints API keys or calls a paid API.
 
-Important settings include:
+<details>
+<summary><b>Key environment variables</b></summary>
+
+<br />
 
 | Variable | Default | Purpose |
 |---|---|---|
@@ -209,20 +307,25 @@ Important settings include:
 
 See `.env.example` for every setting, accepted value, and limit.
 
-## Speech-to-text setup
+</details>
 
-Provider order is controlled by `STT_PROVIDER` and
-`STT_FALLBACK_PROVIDER`. The fallback runs for configuration, quota, rate
-limit, network, timeout, and provider failures. Invalid audio and cancelled
-requests are not retried on another provider.
+## 🗣️ Speech-to-text setup
+
+Provider order is controlled by `STT_PROVIDER` and `STT_FALLBACK_PROVIDER`. The
+fallback runs for configuration, quota, rate limit, network, timeout, and
+provider failures. Invalid audio and cancelled requests are not retried on
+another provider.
 
 | Provider | Value | Audio location | Required setup |
 |---|---|---|---|
-| ElevenLabs Scribe v2 | `elevenlabs` | Sent to ElevenLabs | `ELEVENLABS_API_KEY` |
-| whisper.cpp | `whisper-local` | Remains on this machine | `whisper-cli`, `ffmpeg`, and a model |
-| Fake | `fake` | Ignored | None; development only |
+| ☁️ ElevenLabs Scribe v2 | `elevenlabs` | Sent to ElevenLabs | `ELEVENLABS_API_KEY` |
+| 🏠 whisper.cpp | `whisper-local` | Stays on this machine | `whisper-cli`, `ffmpeg`, and a model |
+| 🧪 Fake | `fake` | Ignored | None; development only |
 
-### ElevenLabs
+<details>
+<summary><b>☁️ ElevenLabs</b></summary>
+
+<br />
 
 Add your server-side key to `.env`:
 
@@ -233,10 +336,17 @@ ELEVENLABS_API_KEY=your-key-here
 ```
 
 The key stays in the server process. It is not sent to browser code, printed by
-the doctor, or included in application logs. ElevenLabs requests use account
-credits and send the audio to a third party.
+the doctor, or included in application logs.
 
-### Local whisper.cpp fallback
+> [!WARNING]
+> ElevenLabs requests use account credits and send the audio to a third party.
+
+</details>
+
+<details>
+<summary><b>🏠 Local whisper.cpp fallback</b></summary>
+
+<br />
 
 Nothing is downloaded automatically.
 
@@ -274,14 +384,16 @@ Uploaded audio is converted to 16 kHz mono WAV in a private temporary
 directory, transcribed, and deleted. Local models and binaries are ignored by
 Git.
 
-## HTTP API
+</details>
 
-The server uses Node's built-in HTTP stack and binds to loopback by default.
-It currently exposes two routes.
+## 🌐 HTTP API
+
+The server uses Node's built-in HTTP stack, binds to loopback by default, and
+exposes two routes.
 
 ### `GET /api/health`
 
-Returns a secret-free configuration summary:
+Returns a configuration summary with no secrets:
 
 ```bash
 curl http://127.0.0.1:3001/api/health
@@ -302,13 +414,18 @@ curl -s http://127.0.0.1:3001/api/audio/transcribe \
   -F "durationSeconds=12.4"
 ```
 
-Successful responses include the normalized transcript, provider used, and a
-summary of fallback attempts:
+<details>
+<summary><b>Response shapes</b></summary>
+
+<br />
+
+Successful responses include the normalized transcript, the provider used, and
+a summary of fallback attempts:
 
 ```json
 {
   "transcript": {
-    "text": "I would use a token bucket backed by Redis...",
+    "text": "I would compare the judge's scores with human ratings on a sample...",
     "languageCode": "en",
     "languageProbability": 0.98,
     "words": [],
@@ -338,37 +455,9 @@ Errors use this shape:
 
 The response may also include `fallback` when all configured providers fail.
 
-## How the interview pipeline works
+</details>
 
-```text
-candidate setup
-      │
-      ├── optional resume ──► bounded professional signals
-      │
-      ▼
-deterministic planner ──► lexical question retrieval ──► interview plan
-      │
-      ▼
-question ──► committed answer ──► optional follow-up ──► next question
-      │
-      ▼
-evidence extraction ──► conservative dimension scoring ──► MD + JSON reports
-```
-
-- Resume parsing supports text, Markdown, PDF, and DOCX. Raw resume text,
-  filenames, paths, and contact details are not persisted.
-- Resume-derived signals affect question selection only; they never increase a
-  score.
-- The question bank supplies expected signals, follow-up probes, and scoring
-  anchors. Private assessment material is never part of the candidate prompt.
-- The canonical answer is the text the candidate commits after any transcript
-  correction.
-- Every quoted report item is validated against a candidate transcript turn.
-- The current evaluator is deterministic and offline. It measures observable
-  coverage, relevance, structure, reasoning markers, examples, and similar
-  evidence; it does not claim to verify technical correctness.
-
-## Architecture
+## 🏗️ Architecture
 
 This is an npm workspace organized around shared runtime schemas:
 
@@ -391,39 +480,31 @@ scripts/                     doctor and question-bank utilities
 docs/                        workshop guide
 ```
 
-Important design properties:
+**Design principles**
 
-- Zod schemas are the runtime source of truth; TypeScript types are derived
-  from them.
-- The interview service owns the state machine and idempotent turn handling.
-- Session writes are validated, serialized per session, and atomically renamed.
-- Speech providers implement one normalized interface behind an explicit
-  failover policy.
-- Tests inject fake clocks, providers, process runners, and stores, so the test
-  suite does not need network access or local speech binaries.
+- 🧬 **Schema-first.** Zod schemas are the runtime source of truth; TypeScript
+  types are derived from them.
+- 🔁 **Idempotent turns.** The interview service owns the state machine and
+  idempotent turn handling.
+- 💾 **Safe persistence.** Session writes are validated, serialized per session,
+  and atomically renamed.
+- 🔌 **Pluggable speech.** Speech providers implement one normalized interface
+  behind an explicit failover policy.
+- 🧪 **Hermetic tests.** Tests inject fake clocks, providers, process runners,
+  and stores, so the suite needs neither network access nor local speech
+  binaries.
 
-## Question-bank tools
-
-Validate the committed seed bank:
+## 📚 Question-bank tools
 
 ```bash
+# Validate the committed seed bank
 npm run validate:questions
-```
 
-Inspect one complete record, including private expected signals and probes:
+# Inspect one complete record, including private expected signals and probes
+npm run questions:show -- ai_eval_llm_judge_validity_01
 
-```bash
-npm run questions:show -- backend_rate_limiter_01
-```
-
-Test retrieval and see why each question ranked where it did:
-
-```bash
-npm run questions:search -- \
-  --role backend \
-  --seniority mid \
-  --focus caching \
-  --top 5
+# Test retrieval and see why each question ranked where it did
+npm run questions:search -- --role ai-evaluation --seniority mid --focus llm-as-judge --top 5
 ```
 
 The search command also supports repeatable `--competency`, `--exclude`, and
@@ -436,7 +517,7 @@ role distribution:
 npm run validate:questions -- path/to/questions.json --no-seed-rules
 ```
 
-## Development commands
+## 🛠️ Development
 
 | Command | Purpose |
 |---|---|
@@ -454,7 +535,9 @@ npm run validate:questions -- path/to/questions.json --no-seed-rules
 | `npm run questions:show -- ID` | Inspect one question record |
 | `npm run questions:search -- ...` | Run an explained retrieval query |
 
-Before submitting a change, run:
+### 🤝 Contributing
+
+Contributions are welcome. Before you submit a change, run:
 
 ```bash
 npm run typecheck
@@ -462,21 +545,28 @@ npm test
 npm run validate:questions
 ```
 
-## Privacy and safety boundaries
+## 🔒 Privacy and safety
 
-- The default API address, `127.0.0.1`, is not reachable from other machines.
-- Raw resumes and audio are never saved by the application.
-- Corrected answer text and bounded resume signals are saved unless
-  `--no-save` is used.
-- Audio uploads stay in memory. whisper.cpp temporary files are removed after
-  each request.
-- Logs contain operational metadata, not audio, transcript text, or keys.
-- Cloud transcription sends audio to ElevenLabs and may consume account
-  credits; local whisper.cpp transcription does neither.
-- Delivery scoring uses measured timing only. The system does not assess
-  accent, facial expression, emotion, protected traits, or job suitability.
+| | |
+|---|---|
+| 🏠 **Loopback by default** | The default API address, `127.0.0.1`, is not reachable from other machines. |
+| 🗑️ **No raw uploads stored** | Raw resumes and audio are never saved by the application. |
+| 💾 **Opt-out persistence** | Corrected answer text and bounded resume signals are saved unless you pass `--no-save`. |
+| 🧹 **Ephemeral audio** | Audio uploads stay in memory. whisper.cpp temporary files are removed after each request. |
+| 📝 **Clean logs** | Logs contain operational metadata, not audio, transcript text, or keys. |
+| ☁️ **Explicit cloud use** | Cloud transcription sends audio to ElevenLabs and may consume credits; local whisper.cpp does neither. |
+| ⚖️ **Fair scoring** | Delivery scoring uses measured timing only. The system does not assess accent, facial expression, emotion, protected traits, or job suitability. |
 
-## Troubleshooting
+## 🩺 Troubleshooting
+
+> [!TIP]
+> Start diagnosis with `npm run doctor`. Warnings about optional voice
+> providers don't prevent text-mode interviews.
+
+<details>
+<summary><b>Common problems and fixes</b></summary>
+
+<br />
 
 | Problem | Resolution |
 |---|---|
@@ -492,15 +582,19 @@ npm run validate:questions
 | No session files appear | Remove `--no-save` and check `INTERVIEW_SESSIONS_DIR` |
 | Port 3001 is already in use | Stop the other process or set a different `PORT` in `.env` |
 
-Start diagnosis with `npm run doctor`; warnings about optional voice providers
-do not prevent text-mode interviews.
+</details>
 
-## Further documentation
+## 📖 Further documentation
 
-- `docs/WORKSHOP.md` — hands-on implementation and extension exercises
-- `CONTEXT.md` — detailed product and architecture blueprint
-- `AI_INTERVIEWER_SKILL.md` — reusable project workflow guidance
+- [`docs/WORKSHOP.md`](docs/WORKSHOP.md): hands-on implementation and extension exercises
+- [`CONTEXT.md`](CONTEXT.md): detailed product and architecture blueprint
+- [`AI_INTERVIEWER_SKILL.md`](AI_INTERVIEWER_SKILL.md): reusable project workflow guidance
 
-## License
+## 📜 License
 
-Licensed under the Apache License 2.0. See `LICENSE`.
+Licensed under the [Apache License 2.0](LICENSE).
+
+<div align="center">
+<br />
+<sub>Built for people who want to practice out loud. ⭐ Star the repo if it helps you prepare.</sub>
+</div>

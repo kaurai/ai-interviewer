@@ -12,9 +12,9 @@ import { makeQuestion } from '../../../packages/shared/test/fixtures';
 describe('question repository', () => {
   it('loads and validates the committed seed bank', async () => {
     const repository = await loadQuestionRepository();
-    expect(repository.size).toBe(60);
-    expect(repository.has('backend_rate_limiter_01')).toBe(true);
-    expect(repository.require('backend_rate_limiter_01').competencyIds).toContain('backend.concurrency');
+    expect(repository.size).toBe(100);
+    expect(repository.has('ai_eng_rag_pipeline_design_01')).toBe(true);
+    expect(repository.require('ai_eng_rag_pipeline_design_01').competencyIds).toContain('ai.retrieval-systems');
   });
 
   it('returns undefined from get and throws from require for unknown IDs', async () => {
@@ -25,7 +25,7 @@ describe('question repository', () => {
 
   it('returns deeply frozen records that callers cannot mutate', async () => {
     const repository = await loadQuestionRepository();
-    const record = repository.require('backend_rate_limiter_01');
+    const record = repository.require('ai_eng_rag_pipeline_design_01');
     expect(() => {
       (record as { question: string }).question = 'rewritten';
     }).toThrow(TypeError);

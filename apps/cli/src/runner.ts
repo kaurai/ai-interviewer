@@ -197,7 +197,7 @@ export async function runCli(options: CliOptions, deps: RunDeps = {}): Promise<{
     const resume = await resumeFrom(options, rl, pipelineConfig.resume);
     if (resume) terminal.log(`Resume signals: ${resume.summary || 'no recognized professional signals'}`);
 
-    const role = options.role ?? (rl ? await choose(rl, 'Target role', ROLES, resume?.inferredRole ?? 'backend') : resume?.inferredRole ?? 'backend');
+    const role = options.role ?? (rl ? await choose(rl, 'Target role', ROLES, resume?.inferredRole ?? 'ai-fundamentals') : resume?.inferredRole ?? 'ai-fundamentals');
     const seniority = options.seniority ?? (rl ? await choose(rl, 'Seniority', SENIORITIES, resume?.inferredSeniority ?? 'mid') : resume?.inferredSeniority ?? 'mid');
     const focus = options.focus ?? (rl ? (await ask(rl, 'Focus areas, comma-separated (optional)')).split(',').map((v) => v.trim()).filter(Boolean) : []);
     const yearsAnswer = options.years !== undefined
